@@ -40,7 +40,16 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
-      - run: npm run test:api
+      - name: Pruebas de la API
+        run: |
+          set -o pipefail
+          npm run test:api 2>&1 | tee test-api.log
+      - name: Mostrar por qué fallaron las pruebas de la API
+        if: failure()
+        run: |
+          # Los registros de Actions exigen iniciar sesión; las anotaciones, en cambio, se ven en el resumen del cambio.
+          grep -nE "^not ok|^# Subtest|^✖|error:|expected:|actual:|message:|AssertionError|code:" test-api.log | head -40 \
+            | while IFS= read -r line; do echo "::error::${line//%/%25}"; done
 
   frontend:
     runs-on: ubuntu-latest

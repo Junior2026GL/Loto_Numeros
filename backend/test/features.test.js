@@ -121,7 +121,7 @@ test('exportar combinaciones: incluye todas las del usuario, con aciertos y resu
   const csv = await download('/combinaciones/exportar', tokens.NORMAL);
   assert.equal(csv.status, 200);
   const lines = csv.text.replace(/^\uFEFF/, '').trim().split('\r\n');
-  assert.equal(lines[0], 'Creada,Estrategia,Números,Sorteo,Resultado,Aciertos,Jugada');
+  assert.equal(lines[0], 'Creada,Estrategia,Números,Sorteo,Resultado,Aciertos,Jugada,Modalidad,Costo,Premio');
   assert.ok(lines.length >= 62, `solo ${lines.length} líneas`);
   assert.ok(lines.some((l) => l.includes('8-11-15-18-19-29,2026-07-15,8-11-15-18-19-29,6,No')));
 
