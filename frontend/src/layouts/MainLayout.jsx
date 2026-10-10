@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { IconDashboard, IconUsers, IconLogbook, IconCalendar, IconDownload, IconChart, IconShuffle } from '../components/icons.jsx';
+import { IconDashboard, IconUsers, IconLogbook, IconCalendar, IconDownload, IconChart, IconShuffle, IconSettings } from '../components/icons.jsx';
 import UserMenu from './UserMenu.jsx';
 
 const ADMINS = ['SUPER_ADMIN', 'ADMIN'];
@@ -12,6 +12,7 @@ const MENU = [
   ['/combinaciones', 'Combinaciones', IconShuffle],
   ['/sincronizacion', 'Sincronización', IconDownload, ADMINS],
   ['/usuarios', 'Usuarios', IconUsers, ['SUPER_ADMIN']],
+  ['/configuracion', 'Configuración', IconSettings, ['SUPER_ADMIN']],
   ['/auditoria', 'Bitácora', IconLogbook, ['SUPER_ADMIN']],
 ];
 

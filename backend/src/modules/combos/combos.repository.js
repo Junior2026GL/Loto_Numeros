@@ -33,8 +33,8 @@ export async function findOwned(id, usuarioId) {
   return rows[0] ? normalize(rows[0]) : null;
 }
 
-export async function listCombinations({ usuarioId, juegoId, page, pageSize }) {
-  const limit = Math.max(1, Math.min(50, Number(pageSize) || 10));
+export async function listCombinations({ usuarioId, juegoId, page, pageSize, maxPageSize = 50 }) {
+  const limit = Math.max(1, Math.min(maxPageSize, Number(pageSize) || 10));
   const offset = Math.max(0, (Number(page) || 1) - 1) * limit;
 
   const [[{ total }]] = await db.query(

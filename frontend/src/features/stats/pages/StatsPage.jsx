@@ -109,6 +109,31 @@ export default function StatsPage() {
             </div>
           </div>
 
+          {stats.uniformidad && (
+            <div className="panel">
+              <h3 className="panel-title">¿Son reales las diferencias entre números?</h3>
+              <p className="panel-note" style={{ marginBottom: 10 }}>
+                Prueba chi-cuadrado: χ² = <b>{stats.uniformidad.chi2}</b> ({stats.uniformidad.gradosLibertad} grados de
+                libertad), p = <b>{stats.uniformidad.pValor}</b>.
+              </p>
+              {stats.uniformidad.pValor >= 0.05 ? (
+                <div className="alert">
+                  <b>Compatible con el azar.</b> No hay evidencia de que algún número salga más o menos de lo normal:
+                  las diferencias que ves en el gráfico son las que se esperan por pura casualidad.
+                </div>
+              ) : (
+                <div className="alert error">
+                  <b>Hay diferencias llamativas</b> entre los números. Aun así, al mirar muchas cosas a la vez
+                  siempre algo parece raro por casualidad, y eso no significa que el patrón se repita en el próximo sorteo.
+                </div>
+              )}
+              <p className="panel-note" style={{ margin: '10px 0 0' }}>
+                Con pocos sorteos la prueba tiene poca fuerza. Es una aproximación: en cada sorteo los 6 números son
+                distintos entre sí.
+              </p>
+            </div>
+          )}
+
           <div className="panel">
             <h3 className="panel-title">Frecuencia de cada número</h3>
             <div className="freq-chart" role="img" aria-label="Frecuencia de cada número">

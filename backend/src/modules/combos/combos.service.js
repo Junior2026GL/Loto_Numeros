@@ -4,13 +4,16 @@ import { DATE_REGEX, todayInHonduras, weekdayOf } from '../../shared/utils/dates
 import * as draws from '../draws/draws.repository.js';
 import { upcomingDraw } from '../draws/draws.service.js';
 import { getStats } from '../stats/stats.service.js';
+import * as statsRepository from '../stats/stats.repository.js';
 import * as repository from './combos.repository.js';
+import { backtest } from './combos.backtest.js';
+import { toCsv } from '../../shared/utils/csv.js';
 import { STRATEGIES, STRATEGY_CODES, countHits, generateAll } from './combos.generator.js';
 
-const strategyName = (codigo) => STRATEGIES.find((s) => s.codigo === codigo)?.nombre || codigo;
+const strategyName = (codigo) => (codigo === 'MANUAL' ? 'Manual' : STRATEGIES.find((s) => s.codigo === codigo)?.nombre || codigo);
 
 const saveSchema = z.object({
-  estrategia: z.enum(STRATEGY_CODES, { errorMap: () => ({ message: 'Estrategia inválida' }) }),
+  estrategia: z.enum([...STRATEGY_CODES, 'MANUAL'], { errorMap: () => ({ message: 'Estrategia inválida' }) }),
   numeros: z.array(z.coerce.number().int('Los números deben ser enteros'), {
     errorMap: () => ({ message: 'Debes enviar la lista de números' }),
   }),
@@ -123,4 +126,51 @@ export async function setPlayed(id, jugada, usuarioId) {
 export async function remove(id, usuarioId) {
   if (!(await repository.findOwned(id, usuarioId))) throw new AppError('Combinación no encontrada', 404);
   await repository.deleteOwned(id, usuarioId);
+}
+
+const clamp = (value, min, max, fallback) => {
+  const n = Number(value);
+  return Number.isInteger(n) ? Math.min(max, Math.max(min, n)) : fallback;
+};
+
+/** Mide cada estrategia contra sorteos pasados usando solo la información previa a cada sorteo. */
+export async function retrospective(query) {
+  const game = await getGame();
+  const [history, config] = await Promise.all([
+    statsRepository.loadDraws({ juegoId: game.id }),
+    statsRepository.loadConfig(),
+  ]);
+
+  return backtest(
+    history,
+    game,
+    {
+      ventanaCalientes: config.ventana_calientes,
+      pesos: { frecuencia: config.peso_frecuencia, atraso: config.peso_atraso, caliente: config.peso_caliente },
+    },
+    {
+      combinaciones: clamp(query.combinaciones, 10, 200, 50),
+      minimo: clamp(query.minimo, 10, 200, 20),
+    }
+  );
+}
+
+/** Todas las combinaciones del usuario en CSV (con aciertos y resultado cuando ya se conocen). */
+export async function exportCsv(usuarioId) {
+  const game = await getGame();
+  await evaluatePending(usuarioId, game.id);
+
+  const { items } = await repository.listCombinations({ usuarioId, juegoId: game.id, page: 1, pageSize: 100_000, maxPageSize: 100_000 });
+  const results = await repository.loadResults(game.id, [...new Set(items.filter((c) => c.evaluada_at).map((c) => c.fecha_sorteo_objetivo))]);
+  const join = (numbers) => (numbers ? numbers.join('-') : '');
+
+  return toCsv(items, [
+    { header: 'Creada', value: (c) => String(c.created_at).slice(0, 16) },
+    { header: 'Estrategia', value: (c) => strategyName(c.estrategia) },
+    { header: 'Números', value: (c) => join(c.numeros) },
+    { header: 'Sorteo', value: (c) => c.fecha_sorteo_objetivo },
+    { header: 'Resultado', value: (c) => join(results.get(c.fecha_sorteo_objetivo)) },
+    { header: 'Aciertos', value: (c) => c.aciertos },
+    { header: 'Jugada', value: (c) => (c.jugada ? 'Sí' : 'No') },
+  ]);
 }

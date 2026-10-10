@@ -14,6 +14,7 @@ import {
   IconTrash,
   IconDownload,
   IconCalendar,
+  IconSettings,
   IconShield,
   IconClock,
   IconLogbook,
@@ -26,18 +27,21 @@ const moduloLabels = {
   AUTENTICACION: 'Autenticación',
   USUARIOS: 'Usuarios',
   SORTEOS: 'Sorteos',
+  CONFIGURACION: 'Configuración',
 };
 
 const moduloTones = {
   AUTENTICACION: 'gray',
   USUARIOS: 'blue',
   SORTEOS: 'amber',
+  CONFIGURACION: 'gray',
 };
 
 const moduloIcons = {
   AUTENTICACION: IconShield,
   USUARIOS: IconUsers,
   SORTEOS: IconCalendar,
+  CONFIGURACION: IconSettings,
 };
 
 const accionLabels = {

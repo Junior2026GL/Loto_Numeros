@@ -6,6 +6,7 @@ import drawsRoutes from '../modules/draws/draws.routes.js';
 import syncRoutes from '../modules/sync/sync.routes.js';
 import statsRoutes from '../modules/stats/stats.routes.js';
 import combosRoutes from '../modules/combos/combos.routes.js';
+import settingsRoutes from '../modules/settings/settings.routes.js';
 import * as authController from '../modules/auth/auth.controller.js';
 import { authRequired, requirePasswordChanged } from '../shared/middleware/auth.middleware.js';
 import { db } from '../infrastructure/database/mysql.js';
@@ -36,5 +37,6 @@ router.use('/sorteos', drawsRoutes);
 router.use('/sincronizacion', syncRoutes);
 router.use('/estadisticas', statsRoutes);
 router.use('/combinaciones', combosRoutes);
+router.use('/configuracion', settingsRoutes);
 
 export default router;

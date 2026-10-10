@@ -9,6 +9,7 @@ import DrawsPage from '../features/draws/pages/DrawsPage.jsx';
 import CombosPage from '../features/combos/pages/CombosPage.jsx';
 import StatsPage from '../features/stats/pages/StatsPage.jsx';
 import SyncPage from '../features/sync/pages/SyncPage.jsx';
+import SettingsPage from '../features/settings/pages/SettingsPage.jsx';
 import UsersPage from '../features/users/pages/UsersPage.jsx';
 import AuditPage from '../features/audit/pages/AuditPage.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
@@ -57,6 +58,14 @@ export const router = createBrowserRouter([
         element: (
           <Protected roles={['SUPER_ADMIN']}>
             <UsersPage />
+          </Protected>
+        ),
+      },
+      {
+        path: 'configuracion',
+        element: (
+          <Protected roles={['SUPER_ADMIN']}>
+            <SettingsPage />
           </Protected>
         ),
       },

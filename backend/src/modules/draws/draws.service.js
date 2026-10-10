@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { AppError } from '../../shared/errors/AppError.js';
 import { DATE_REGEX, addDays, drawDatesBetween, nowInHonduras, todayInHonduras, weekdayOf } from '../../shared/utils/dates.js';
+import { toCsv } from '../../shared/utils/csv.js';
 import * as repository from './draws.repository.js';
 
 // Minutos después de la hora del sorteo en que ya se espera que el resultado esté publicado.
@@ -161,4 +162,29 @@ export async function remove(id) {
   const draw = await getById(id);
   await repository.deleteDraw(id);
   return draw;
+}
+
+/** Historial de sorteos en CSV, respetando los mismos filtros de la pantalla. */
+export async function exportCsv(query) {
+  const g = await getGame();
+  const dia = query.dia === undefined || query.dia === '' ? null : Number(query.dia);
+
+  const { items } = await repository.listDraws({
+    juegoId: g.id,
+    mes: Number(query.mes) || null,
+    anio: Number(query.anio) || null,
+    dia: Number.isInteger(dia) && g.dias.includes(dia) ? dia : null,
+    page: 1,
+    pageSize: 100_000,
+    maxPageSize: 100_000,
+  });
+
+  const days = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  const columns = [
+    { header: 'Fecha', value: (d) => String(d.fecha).slice(0, 10) },
+    { header: 'Día', value: (d) => days[d.dia_semana] },
+    ...Array.from({ length: g.cantidad_numeros }, (_, i) => ({ header: `Número ${i + 1}`, value: (d) => d.numeros[i] })),
+    { header: 'Origen', value: (d) => d.fuente },
+  ];
+  return toCsv(items, columns);
 }

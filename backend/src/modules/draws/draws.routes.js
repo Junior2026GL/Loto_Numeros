@@ -8,6 +8,7 @@ const router = Router();
 router.get('/juego', controller.game);
 router.get('/resumen', controller.summary);
 router.get('/meses', controller.months);
+router.get('/exportar', controller.exportCsv);
 router.get('/', controller.list);
 router.get('/:id', controller.getById);
 

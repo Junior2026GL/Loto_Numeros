@@ -4,6 +4,8 @@
 // IMPORTANTE: son estadísticas DESCRIPTIVAS del pasado. Cada sorteo es independiente:
 // que un número "lleve tiempo sin salir" no hace más probable que salga.
 
+import { uniformityTest } from './chi-square.js';
+
 const HOT_COUNT = 8;
 const TOP_FREQUENT = 10;
 const TOP_COLD = 5;
@@ -126,6 +128,10 @@ export function computeStats(draws, game, config = {}) {
     // Cuántas veces "debería" salir cada número si todos fueran igual de probables.
     esperadoPorNumero: total > 0 ? round((total * pick) / numbers.length, 1) : 0,
     frecuencia,
+    // ¿Las diferencias entre números son compatibles con el azar? (chi-cuadrado, p >= 0.05 = sí)
+    uniformidad: total > 0
+      ? uniformityTest(frecuencia.map((f) => f.veces), (total * pick) / numbers.length)
+      : null,
     masFrecuentes: [...frecuencia].sort((a, b) => b.veces - a.veces || byNumber(a, b)).slice(0, TOP_FREQUENT),
     masFrios: [...frecuencia].sort((a, b) => a.veces - b.veces || byNumber(a, b)).slice(0, TOP_COLD),
     calientes: frecuencia.filter((f) => f.caliente).map((f) => f.numero),

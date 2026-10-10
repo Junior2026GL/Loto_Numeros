@@ -1,20 +1,25 @@
 import { useEffect, useState } from 'react';
 import PageHeader from '../../../components/PageHeader.jsx';
 import Pagination from '../../../components/Pagination.jsx';
+import ConfirmDialog from '../../../components/ConfirmDialog.jsx';
 import LotteryBall, { BallsRow } from '../../../components/LotteryBall.jsx';
 import { useToast } from '../../../components/ToastProvider.jsx';
-import { IconAlert, IconCheck, IconSave, IconTrash } from '../../../components/icons.jsx';
+import { IconAlert, IconCheck, IconDownload, IconSave, IconTrash } from '../../../components/icons.jsx';
 import {
   deleteCombination,
   generateCombinations,
   getCombinationsSummary,
+  getRetrospective,
   listCombinations,
   saveCombination,
   setCombinationPlayed,
 } from '../services/combos.service.js';
+import { getSummary as getDrawsSummary } from '../../draws/services/draws.service.js';
+import { downloadFile } from '../../../services/download.js';
 import { capitalize, dayName, formatDate } from '../../../utils/dates.js';
 
 const PAGE_SIZE = 10;
+const PICK = 6;
 
 /** Números de una combinación; si ya se conoce el resultado, resalta los aciertos. */
 function ComboBalls({ numbers, result }) {
@@ -35,11 +40,22 @@ export default function CombosPage() {
   const [savedCodes, setSavedCodes] = useState(new Set());
   const [generating, setGenerating] = useState(false);
   const [savingCode, setSavingCode] = useState('');
+  const [nextDraw, setNextDraw] = useState(null);
+  const [manual, setManual] = useState(Array(PICK).fill(''));
+  const [savingManual, setSavingManual] = useState(false);
   const [list, setList] = useState({ items: [], total: 0 });
   const [summary, setSummary] = useState(null);
+  const [backtest, setBacktest] = useState(null);
+  const [runningBacktest, setRunningBacktest] = useState(false);
+  const [toDelete, setToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const [page, setPage] = useState(1);
   const [reload, setReload] = useState(0);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    getDrawsSummary().then((s) => setNextDraw(s.proximo)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     listCombinations({ page, pageSize: PAGE_SIZE })
@@ -52,7 +68,9 @@ export default function CombosPage() {
     setGenerating(true);
     setError('');
     try {
-      setGenerated(await generateCombinations());
+      const data = await generateCombinations();
+      setGenerated(data);
+      setNextDraw(data.proximoSorteo);
       setSavedCodes(new Set());
     } catch (err) {
       setError(err.response?.data?.message || 'No se pudieron generar las combinaciones');
@@ -64,11 +82,7 @@ export default function CombosPage() {
   async function save(strategy) {
     setSavingCode(strategy.codigo);
     try {
-      await saveCombination({
-        estrategia: strategy.codigo,
-        numeros: strategy.numeros,
-        fecha: generated.proximoSorteo?.fecha,
-      });
+      await saveCombination({ estrategia: strategy.codigo, numeros: strategy.numeros, fecha: nextDraw?.fecha });
       setSavedCodes((current) => new Set(current).add(strategy.codigo));
       toast.success('Combinación guardada.');
       setPage(1);
@@ -77,6 +91,22 @@ export default function CombosPage() {
       toast.error(err.response?.data?.message || 'No se pudo guardar la combinación');
     } finally {
       setSavingCode('');
+    }
+  }
+
+  async function saveManual(e) {
+    e.preventDefault();
+    setSavingManual(true);
+    try {
+      await saveCombination({ estrategia: 'MANUAL', numeros: manual.map(Number), fecha: nextDraw?.fecha });
+      toast.success('Combinación guardada.');
+      setManual(Array(PICK).fill(''));
+      setPage(1);
+      setReload((n) => n + 1);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'No se pudo guardar la combinación');
+    } finally {
+      setSavingManual(false);
     }
   }
 
@@ -89,24 +119,54 @@ export default function CombosPage() {
     }
   }
 
-  async function remove(combo) {
-    if (!window.confirm('¿Eliminar esta combinación?')) return;
+  async function confirmDelete() {
+    setDeleting(true);
     try {
-      await deleteCombination(combo.id);
+      await deleteCombination(toDelete.id);
       toast.success('Combinación eliminada.');
       setReload((n) => n + 1);
     } catch (err) {
       toast.error(err.response?.data?.message || 'No se pudo eliminar la combinación');
+    } finally {
+      setDeleting(false);
+      setToDelete(null);
     }
   }
 
-  const next = generated?.proximoSorteo;
+  async function exportCsv() {
+    try {
+      await downloadFile('/combinaciones/exportar', 'mis-combinaciones.csv');
+    } catch {
+      toast.error('No se pudo exportar tus combinaciones');
+    }
+  }
+
+  async function runBacktest() {
+    setRunningBacktest(true);
+    try {
+      setBacktest(await getRetrospective());
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'No se pudo ejecutar la prueba');
+    } finally {
+      setRunningBacktest(false);
+    }
+  }
+
+  const manualNumbers = manual.map(Number);
+  const manualValid = manual.every((v) => v !== '')
+    && manualNumbers.every((n) => Number.isInteger(n) && n >= 1 && n <= 33)
+    && new Set(manualNumbers).size === PICK;
 
   return (
     <>
       <PageHeader
         title="Combinaciones"
         description="Genera combinaciones, guárdalas y compáralas con el resultado real."
+        actions={(
+          <button className="btn-outline" onClick={exportCsv}>
+            <IconDownload /> Exportar CSV
+          </button>
+        )}
       />
 
       <div className="alert stats-disclaimer">
@@ -124,9 +184,9 @@ export default function CombosPage() {
         <div className="panel-head-row">
           <div>
             <h3 className="panel-title" style={{ margin: 0 }}>Generador</h3>
-            {next && (
+            {generated && nextDraw && (
               <p className="panel-note" style={{ margin: '4px 0 0' }}>
-                Para el sorteo del <b>{capitalize(dayName(next.dia_semana))} {formatDate(next.fecha)}</b> a las {next.hora}.
+                Para el sorteo del <b>{capitalize(dayName(nextDraw.dia_semana))} {formatDate(nextDraw.fecha)}</b> a las {nextDraw.hora}.
                 Basado en {generated.sorteosAnalizados} sorteos.
               </p>
             )}
@@ -161,6 +221,34 @@ export default function CombosPage() {
           </div>
         )}
       </div>
+
+      <form className="panel" onSubmit={saveManual}>
+        <h3 className="panel-title">Mi propia combinación</h3>
+        <p className="panel-note">
+          Escribe los {PICK} números que quieres jugar (del 1 al 33)
+          {nextDraw && <> para el sorteo del <b>{capitalize(dayName(nextDraw.dia_semana))} {formatDate(nextDraw.fecha)}</b></>}.
+        </p>
+        <div className="manual-inputs">
+          {manual.map((value, i) => (
+            <input
+              key={i}
+              type="number"
+              inputMode="numeric"
+              min="1"
+              max="33"
+              value={value}
+              aria-label={`Número ${i + 1}`}
+              onChange={(e) => setManual(manual.map((v, j) => (j === i ? e.target.value : v)))}
+            />
+          ))}
+          <button className="btn-primary" disabled={!manualValid || savingManual || !nextDraw}>
+            <IconSave /> {savingManual ? 'Guardando…' : 'Guardar'}
+          </button>
+        </div>
+        {manual.every((v) => v !== '') && !manualValid && (
+          <span className="field-error">Deben ser {PICK} números distintos entre 1 y 33.</span>
+        )}
+      </form>
 
       <div className="panel table-wrap">
         <h3 className="panel-title">Mis combinaciones</h3>
@@ -201,7 +289,7 @@ export default function CombosPage() {
                       </label>
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      <button className="icon-btn" title="Eliminar" aria-label="Eliminar" onClick={() => remove(combo)}>
+                      <button className="icon-btn" title="Eliminar" aria-label="Eliminar" onClick={() => setToDelete(combo)}>
                         <IconTrash />
                       </button>
                     </td>
@@ -216,7 +304,7 @@ export default function CombosPage() {
 
       {summary?.estrategias.length > 0 && (
         <div className="panel table-wrap">
-          <h3 className="panel-title">Rendimiento por estrategia</h3>
+          <h3 className="panel-title">Rendimiento de tus combinaciones</h3>
           <p className="panel-note">
             Aciertos promedio de tus combinaciones ya evaluadas. Por puro azar se esperan
             <b> {summary.promedioPorAzar}</b> aciertos por combinación: si una estrategia queda cerca de ese
@@ -245,6 +333,71 @@ export default function CombosPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      <div className="panel table-wrap">
+        <div className="panel-head-row">
+          <div>
+            <h3 className="panel-title" style={{ margin: 0 }}>¿Funcionan las estrategias? Prueba con sorteos pasados</h3>
+            <p className="panel-note" style={{ margin: '4px 0 0' }}>
+              Para cada sorteo pasado se generan combinaciones usando solo lo que se sabía antes de ese sorteo
+              y se cuentan los aciertos reales.
+            </p>
+          </div>
+          <button className="btn-outline" onClick={runBacktest} disabled={runningBacktest}>
+            {runningBacktest ? 'Calculando…' : backtest ? 'Repetir prueba' : 'Ejecutar prueba'}
+          </button>
+        </div>
+
+        {backtest && (backtest.sorteosEvaluados === 0 ? (
+          <div className="alert">Todavía no hay suficientes sorteos guardados para hacer la prueba.</div>
+        ) : (
+          <>
+            <table>
+              <thead>
+                <tr>
+                  <th>Estrategia</th>
+                  <th>Aciertos promedio</th>
+                  <th>Margen de error</th>
+                  <th>Diferencia con el azar</th>
+                  <th>Veredicto</th>
+                </tr>
+              </thead>
+              <tbody>
+                {backtest.estrategias.map((e) => (
+                  <tr key={e.codigo}>
+                    <td>{e.nombre}</td>
+                    <td><strong>{e.promedio}</strong></td>
+                    <td>± {e.margenError}</td>
+                    <td>{e.diferenciaVsAzar > 0 ? '+' : ''}{e.diferenciaVsAzar}</td>
+                    <td>
+                      <span className={`verdict ${e.distinguibleDelAzar ? 'diff' : ''}`}>
+                        {e.distinguibleDelAzar ? 'Distinta del azar' : 'Igual al azar'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="panel-note" style={{ margin: '12px 0 0' }}>
+              Con {backtest.sorteosEvaluados} sorteos evaluados y {backtest.combinacionesPorSorteo} combinaciones por sorteo.
+              Por azar se esperan <b>{backtest.promedioPorAzar}</b> aciertos. Si una estrategia dice
+              "Igual al azar", su diferencia cae dentro del margen de error: es ruido, no una ventaja real.
+            </p>
+          </>
+        ))}
+      </div>
+
+      {toDelete && (
+        <ConfirmDialog
+          title="Eliminar combinación"
+          message="¿Eliminar esta combinación? Esta acción no se puede deshacer."
+          confirmLabel="Eliminar"
+          danger
+          busy={deleting}
+          onConfirm={confirmDelete}
+          onCancel={() => setToDelete(null)}
+        />
       )}
     </>
   );

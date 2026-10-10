@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import PageHeader from '../../../components/PageHeader.jsx';
 import Modal from '../../../components/Modal.jsx';
 import Pagination from '../../../components/Pagination.jsx';
+import ConfirmDialog from '../../../components/ConfirmDialog.jsx';
 import { BallsRow } from '../../../components/LotteryBall.jsx';
 import { useToast } from '../../../components/ToastProvider.jsx';
-import { IconPlus, IconTrash, IconCalendar } from '../../../components/icons.jsx';
+import { IconPlus, IconTrash, IconCalendar, IconDownload } from '../../../components/icons.jsx';
+import { downloadFile } from '../../../services/download.js';
 import {
   createDraw,
   deleteDraw,
@@ -35,6 +37,8 @@ export default function DrawsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ fecha: '', numeros: [] });
   const [saving, setSaving] = useState(false);
+  const [toDelete, setToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const [formError, setFormError] = useState('');
 
   useEffect(() => {
@@ -88,14 +92,26 @@ export default function DrawsPage() {
     }
   }
 
-  async function remove(draw) {
-    if (!window.confirm(`¿Eliminar el sorteo del ${formatDate(draw.fecha)}? Esta acción no se puede deshacer.`)) return;
+  async function confirmDelete() {
+    setDeleting(true);
     try {
-      await deleteDraw(draw.id);
+      await deleteDraw(toDelete.id);
       toast.success('Sorteo eliminado correctamente.');
       setReload((n) => n + 1);
     } catch (err) {
       toast.error(err.response?.data?.message || 'No se pudo eliminar el sorteo');
+    } finally {
+      setDeleting(false);
+      setToDelete(null);
+    }
+  }
+
+  async function exportCsv() {
+    const [anio, mes] = monthFilter ? monthFilter.split('-') : [];
+    try {
+      await downloadFile('/sorteos/exportar', 'sorteos.csv', { anio, mes, dia: dayFilter });
+    } catch {
+      toast.error('No se pudo exportar el historial');
     }
   }
 
@@ -104,10 +120,17 @@ export default function DrawsPage() {
       <PageHeader
         title="Sorteos"
         description={game ? `Historial de resultados · ${game.nombre}` : 'Historial de resultados.'}
-        actions={canEdit && (
-          <button className="btn-primary" onClick={openCreate} disabled={!game}>
-            <IconPlus /> Registrar sorteo
-          </button>
+        actions={(
+          <div className="panel-actions">
+            <button className="btn-outline" onClick={exportCsv}>
+              <IconDownload /> Exportar CSV
+            </button>
+            {canEdit && (
+              <button className="btn-primary" onClick={openCreate} disabled={!game}>
+                <IconPlus /> Registrar sorteo
+              </button>
+            )}
+          </div>
         )}
       />
 
@@ -182,7 +205,7 @@ export default function DrawsPage() {
                           className="icon-btn"
                           title="Eliminar sorteo"
                           aria-label="Eliminar sorteo"
-                          onClick={() => remove(draw)}
+                          onClick={() => setToDelete(draw)}
                         >
                           <IconTrash />
                         </button>
@@ -196,6 +219,18 @@ export default function DrawsPage() {
           </>
         )}
       </div>
+
+      {toDelete && (
+        <ConfirmDialog
+          title="Eliminar sorteo"
+          message={`¿Eliminar el sorteo del ${formatDate(toDelete.fecha)}? Esta acción no se puede deshacer.`}
+          confirmLabel="Eliminar"
+          danger
+          busy={deleting}
+          onConfirm={confirmDelete}
+          onCancel={() => setToDelete(null)}
+        />
+      )}
 
       {showCreate && game && (
         <Modal

@@ -1,4 +1,5 @@
 import * as service from './draws.service.js';
+import { sendCsv } from '../../shared/utils/csv.js';
 import { record as recordAudit } from '../audit/audit.service.js';
 
 function formatNumbers(draw) {
@@ -68,6 +69,14 @@ export async function remove(req, res, next) {
       descripcion: `Sorteo eliminado: ${data.fecha} (${formatNumbers(data)})`,
     });
     res.json({ ok: true, data: { id: data.id } });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function exportCsv(req, res, next) {
+  try {
+    sendCsv(res, 'sorteos.csv', await service.exportCsv(req.query));
   } catch (error) {
     next(error);
   }

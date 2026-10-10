@@ -25,7 +25,7 @@ async function attachNumbers(sorteos) {
   return sorteos.map((s) => ({ ...s, numeros: byDraw.get(s.id) || [] }));
 }
 
-export async function listDraws({ juegoId, mes, anio, dia, page, pageSize }) {
+export async function listDraws({ juegoId, mes, anio, dia, page, pageSize, maxPageSize = 100 }) {
   const where = ['s.juego_id = ?'];
   const params = [juegoId];
 
@@ -46,7 +46,7 @@ export async function listDraws({ juegoId, mes, anio, dia, page, pageSize }) {
 
   const [[{ total }]] = await db.query(`SELECT COUNT(*) total FROM sorteos s ${whereSql}`, params);
 
-  const limit = Math.max(1, Math.min(100, Number(pageSize) || 20));
+  const limit = Math.max(1, Math.min(maxPageSize, Number(pageSize) || 20));
   const offset = Math.max(0, (Number(page) || 1) - 1) * limit;
 
   const [rows] = await db.query(

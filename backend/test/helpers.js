@@ -72,5 +72,5 @@ export async function startApi() {
     return { ...res, token: res.data?.token };
   }
 
-  return { request, login, close: () => new Promise((r) => server.close(r)) };
+  return { base, request, login, close: () => new Promise((r) => server.close(r)) };
 }

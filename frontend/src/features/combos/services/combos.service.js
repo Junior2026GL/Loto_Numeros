@@ -29,3 +29,8 @@ export async function deleteCombination(id) {
   const { data } = await api.delete(`/combinaciones/${id}`);
   return data.data;
 }
+
+export async function getRetrospective() {
+  const { data } = await api.get('/combinaciones/prueba-retrospectiva');
+  return data.data;
+}
