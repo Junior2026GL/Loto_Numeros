@@ -87,6 +87,19 @@ export async function findLastDraw(juegoId) {
   return draw || null;
 }
 
+export async function listDrawDates(juegoId, desde, hasta) {
+  const [rows] = await db.query(
+    'SELECT fecha FROM sorteos WHERE juego_id = ? AND fecha BETWEEN ? AND ?',
+    [juegoId, desde, hasta]
+  );
+  return rows.map((r) => String(r.fecha).slice(0, 10));
+}
+
+export async function findLastDrawDate(juegoId) {
+  const [rows] = await db.query('SELECT MAX(fecha) AS fecha FROM sorteos WHERE juego_id = ?', [juegoId]);
+  return rows[0]?.fecha ? String(rows[0].fecha).slice(0, 10) : null;
+}
+
 export async function countDraws(juegoId) {
   const [[{ total }]] = await db.query('SELECT COUNT(*) total FROM sorteos WHERE juego_id = ?', [juegoId]);
   return Number(total);

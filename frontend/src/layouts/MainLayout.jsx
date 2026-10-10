@@ -1,22 +1,22 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { IconDashboard, IconUsers, IconLogbook, IconCalendar } from '../components/icons.jsx';
+import { IconDashboard, IconUsers, IconLogbook, IconCalendar, IconDownload } from '../components/icons.jsx';
 import UserMenu from './UserMenu.jsx';
 
-const baseMenu = [
+const ADMINS = ['SUPER_ADMIN', 'ADMIN'];
+
+// [ruta, etiqueta, ícono, roles permitidos (sin roles = todos)]
+const MENU = [
   ['/', 'Dashboard', IconDashboard],
   ['/sorteos', 'Sorteos', IconCalendar],
+  ['/sincronizacion', 'Sincronización', IconDownload, ADMINS],
+  ['/usuarios', 'Usuarios', IconUsers, ['SUPER_ADMIN']],
+  ['/auditoria', 'Bitácora', IconLogbook, ['SUPER_ADMIN']],
 ];
 
 export default function MainLayout() {
   const user = JSON.parse(localStorage.getItem('loto_numeros_user') || 'null');
 
-  const menu = user?.rol === 'SUPER_ADMIN'
-    ? [
-        ...baseMenu,
-        ['/usuarios', 'Usuarios', IconUsers],
-        ['/auditoria', 'Bitácora', IconLogbook],
-      ]
-    : baseMenu;
+  const menu = MENU.filter(([, , , roles]) => !roles || roles.includes(user?.rol));
 
   return (
     <div className="app-shell">

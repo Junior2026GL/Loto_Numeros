@@ -21,4 +21,11 @@ export const env = {
 
   jwtSecret: process.env.JWT_SECRET || 'cambia-esta-clave',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '8h',
+
+  lotto: {
+    baseUrl: process.env.LOTTO_API_URL || 'https://loto.hn/api/resultados_superpremio_por_fecha.php',
+    timeoutMs: Number(process.env.LOTTO_TIMEOUT_MS || 10000),
+    // Sincronización automática después de cada sorteo. Apagada por defecto.
+    autoSync: process.env.SYNC_AUTO === 'true',
+  },
 };

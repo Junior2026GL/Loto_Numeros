@@ -1,10 +1,7 @@
 import { z } from 'zod';
 import { AppError } from '../../shared/errors/AppError.js';
+import { DATE_REGEX, nowInHonduras, todayInHonduras, weekdayOf } from '../../shared/utils/dates.js';
 import * as repository from './draws.repository.js';
-
-// Honduras no usa horario de verano: UTC-6 todo el año.
-const HONDURAS_OFFSET_HOURS = -6;
-const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 const createSchema = z.object({
   fecha: z.string().regex(DATE_REGEX, 'La fecha debe tener formato AAAA-MM-DD'),
@@ -25,17 +22,6 @@ async function getGame() {
   const game = await repository.findDefaultGame();
   if (!game) throw new AppError('No hay un juego activo configurado', 500);
   return { ...game, dias: game.dias_sorteo.split(',').map(Number) };
-}
-
-/** Día de la semana (0=domingo ... 6=sábado) de una fecha AAAA-MM-DD, o null si no es una fecha real. */
-function weekdayOf(fecha) {
-  const date = new Date(`${fecha}T00:00:00Z`);
-  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== fecha) return null;
-  return date.getUTCDay();
-}
-
-function nowInHonduras() {
-  return new Date(Date.now() + HONDURAS_OFFSET_HOURS * 3600 * 1000);
 }
 
 /** Próximo sorteo (fecha, día y hora) según los días del juego y la hora actual de Honduras. */
@@ -113,7 +99,7 @@ export async function create(payload, userId) {
   if (!g.dias.includes(dia)) {
     throw new AppError('La fecha no corresponde a un día de sorteo de este juego');
   }
-  if (data.fecha > nowInHonduras().toISOString().slice(0, 10)) {
+  if (data.fecha > todayInHonduras()) {
     throw new AppError('No se puede registrar un sorteo con fecha futura');
   }
 

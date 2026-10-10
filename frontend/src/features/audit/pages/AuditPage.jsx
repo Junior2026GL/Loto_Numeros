@@ -12,6 +12,7 @@ import {
   IconEdit,
   IconPower,
   IconTrash,
+  IconDownload,
   IconCalendar,
   IconShield,
   IconClock,
@@ -49,6 +50,7 @@ const accionLabels = {
   DESACTIVAR: 'Desactivación',
   RESET_PASSWORD: 'Restablecer contraseña',
   ELIMINAR: 'Eliminación',
+  SINCRONIZAR: 'Sincronización',
 };
 
 const accionTones = {
@@ -61,6 +63,7 @@ const accionTones = {
   DESACTIVAR: 'red',
   RESET_PASSWORD: 'purple',
   ELIMINAR: 'red',
+  SINCRONIZAR: 'blue',
 };
 
 const accionIcons = {
@@ -73,6 +76,7 @@ const accionIcons = {
   DESACTIVAR: IconPower,
   RESET_PASSWORD: IconLock,
   ELIMINAR: IconTrash,
+  SINCRONIZAR: IconDownload,
 };
 
 // Debe coincidir con ACCIONES_ALERTA del backend (audit.repository.js).

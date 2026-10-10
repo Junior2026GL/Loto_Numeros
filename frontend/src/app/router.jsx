@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import LoginPage from '../features/auth/pages/LoginPage.jsx';
 import DashboardPage from '../features/dashboard/pages/DashboardPage.jsx';
 import DrawsPage from '../features/draws/pages/DrawsPage.jsx';
+import SyncPage from '../features/sync/pages/SyncPage.jsx';
 import UsersPage from '../features/users/pages/UsersPage.jsx';
 import AuditPage from '../features/audit/pages/AuditPage.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
@@ -32,6 +33,14 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <DashboardPage /> },
       { path: 'sorteos', element: <DrawsPage /> },
+      {
+        path: 'sincronizacion',
+        element: (
+          <Protected roles={['SUPER_ADMIN', 'ADMIN']}>
+            <SyncPage />
+          </Protected>
+        ),
+      },
       {
         path: 'usuarios',
         element: (
