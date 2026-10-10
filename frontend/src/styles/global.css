@@ -1318,7 +1318,7 @@ tbody tr:last-child td { border-bottom: 0; }
 .last-draw-date span { color: var(--color-muted); font-size: 14px; }
 
 .stat-text { font-size: 18px !important; line-height: 1.25; }
-.stat-hint { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; color: var(--color-muted); font-size: 12.5px; }
+.stat-hint { display: inline-flex; align-items: center; gap: 4px; margin: 4px 0 0 10px; color: var(--color-muted); font-size: 12.5px; }
 
 .draw-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); gap: 10px; }
 .draw-inputs input { text-align: center; font-weight: 700; }
@@ -1386,3 +1386,9 @@ tbody tr:last-child td { border-bottom: 0; }
 .combo-card p { margin: 0; color: var(--color-muted); font-size: 12.5px; line-height: 1.5; }
 .switch-row { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; }
 .switch-row input { width: auto; margin: 0; }
+
+/* ---- Correcciones de maquetación ---- */
+/* Un panel que además es contenedor de tabla conserva su relleno y su separación normales. */
+.panel.table-wrap { margin: 0 0 20px; padding: 22px 24px; }
+/* La bola dentro de una tarjeta de resumen no hereda el estilo de los textos de la tarjeta. */
+.stat-card .ball { display: inline-flex; margin: 4px 0 0; font-size: 13px; font-weight: 800; color: #3b2a00; }
