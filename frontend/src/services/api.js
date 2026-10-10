@@ -14,9 +14,12 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const isLoginRequest = error.config?.url?.endsWith('/auth/login');
+    if (error.response?.status === 401 && !isLoginRequest) {
+      // Sesión vencida o usuario desactivado: se limpia y se vuelve al login.
       localStorage.removeItem('loto_numeros_token');
       localStorage.removeItem('loto_numeros_user');
+      if (window.location.pathname !== '/login') window.location.assign('/login');
     }
     return Promise.reject(error);
   }

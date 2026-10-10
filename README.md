@@ -22,3 +22,9 @@ React + Vite (frontend), Node.js + Express (backend) y MySQL.
 3. En `backend`, copia `.env.example` a `.env`, configura credenciales, ejecuta `npm install` y `npm run dev`.
 4. En `frontend`, copia `.env.example` a `.env`, ejecuta `npm install` y `npm run dev`.
 5. Accede a `http://localhost:5173`.
+
+## Más información
+
+- Arquitectura: `docs/ARQUITECTURA.md`
+- Cómo publicar el sistema y hacer copias de seguridad: `docs/DESPLIEGUE.md`
+- Pruebas del backend: `cd backend && npm test`
