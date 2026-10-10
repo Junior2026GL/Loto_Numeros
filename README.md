@@ -17,17 +17,19 @@ seguimiento de combinaciones. React + Vite (frontend), Node.js + Express (backen
 
 ## Arranque local
 
-1. En MySQL ejecuta `backend/src/infrastructure/database/setup.sql` (crea la base, tablas, roles, el juego, el historial inicial y el superadmin).
-2. En `backend`: copia `.env.example` a `.env` y pon tu `DB_PASSWORD`; luego `npm install`, **`npm run migrate`** y `npm run dev`.
-3. En `frontend`: copia `.env.example` a `.env`, `npm install` y `npm run dev`.
-4. Abre `http://localhost:5173`. El superadmin debe cambiar su contraseña inicial en el primer ingreso.
-5. Entra a **Sincronización** y pulsa "Sincronizar ahora" para traer los resultados que falten.
+1. En `backend`: copia `.env.example` a `.env` y pon tu `DB_PASSWORD`; luego `npm install`.
+2. Crea la base con **`npm run db:setup`** (ejecuta `setup.sql` y las migraciones: tablas, roles, el juego, el historial inicial y el superadmin). No necesita Workbench.
+3. `npm run dev`.
+4. En `frontend`: copia `.env.example` a `.env`, `npm install` y `npm run dev`.
+5. Abre `http://localhost:5173`. El superadmin debe cambiar su contraseña inicial en el primer ingreso.
+6. Entra a **Sincronización** y pulsa "Sincronizar ahora" para traer los resultados que falten.
 
 ## Comandos útiles (en `backend`)
 
 | Comando | Qué hace |
 |---|---|
-| `npm run migrate` | Aplica las migraciones pendientes de la base de datos |
+| `npm run db:setup` | Crea la base completa (setup.sql + migraciones); sirve también para una base remota |
+| `npm run migrate` | Aplica solo las migraciones pendientes |
 | `npm test` | Pruebas unitarias de la lógica pura |
 | `npm run test:api` | Pruebas de la API (crea y usa la base `loto_numeros_test`) |
 | `npm run lint` | ESLint (también en `frontend`) |

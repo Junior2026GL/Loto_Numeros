@@ -14,8 +14,9 @@ verificación del final antes de dar acceso a usuarios.
    CREATE USER 'loto_app'@'localhost' IDENTIFIED BY '<contraseña larga>';
    GRANT SELECT, INSERT, UPDATE, DELETE ON loto_numeros.* TO 'loto_app'@'localhost';
    ```
-2. Ejecuta `backend/src/infrastructure/database/setup.sql` con un usuario administrador de MySQL.
-3. Aplica las migraciones (con un usuario con permiso de `ALTER`/`CREATE`): `cd backend && npm run migrate`.
+2. Crea la base y aplica las migraciones con un usuario administrador de MySQL: `cd backend && npm run db:setup`
+   (usa las variables `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`; sirve también para una base remota como la de Railway).
+   Alternativa manual: ejecutar `setup.sql` en Workbench y luego `npm run migrate`.
 4. El `superadmin` inicial queda obligado a cambiar su contraseña en el primer ingreso. La contraseña inicial
    está en tu mensaje de entrega, no en el código: **no la reutilices**.
 

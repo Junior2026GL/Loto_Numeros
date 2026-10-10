@@ -12,7 +12,8 @@
     "test:api": "node scripts/run-tests.js test --serial",
     "test:all": "npm test && npm run test:api",
     "lint": "eslint src scripts test",
-    "restore": "node scripts/restore-db.js"
+    "restore": "node scripts/restore-db.js",
+    "db:setup": "node scripts/setup-db.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
