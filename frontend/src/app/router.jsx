@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import LoginPage from '../features/auth/pages/LoginPage.jsx';
 import DashboardPage from '../features/dashboard/pages/DashboardPage.jsx';
 import DrawsPage from '../features/draws/pages/DrawsPage.jsx';
+import CombosPage from '../features/combos/pages/CombosPage.jsx';
 import StatsPage from '../features/stats/pages/StatsPage.jsx';
 import SyncPage from '../features/sync/pages/SyncPage.jsx';
 import UsersPage from '../features/users/pages/UsersPage.jsx';
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
       { index: true, element: <DashboardPage /> },
       { path: 'sorteos', element: <DrawsPage /> },
       { path: 'estadisticas', element: <StatsPage /> },
+      { path: 'combinaciones', element: <CombosPage /> },
       {
         path: 'sincronizacion',
         element: (

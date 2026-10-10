@@ -43,6 +43,10 @@ function nextDraw(game) {
   return null;
 }
 
+export async function upcomingDraw() {
+  return nextDraw(await getGame());
+}
+
 export async function game() {
   const { dias, ...rest } = await getGame();
   return { ...rest, dias_sorteo: dias };

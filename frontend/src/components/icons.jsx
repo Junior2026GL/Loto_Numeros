@@ -299,3 +299,12 @@ export function IconChart(props) {
     </svg>
   );
 }
+
+export function IconShuffle(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3 7h3.5c2 0 3.2 1 4.3 2.6l2.4 3.8c1.1 1.6 2.3 2.6 4.3 2.6H21M3 17h3.5c2 0 3.2-1 4.3-2.6M13.2 8.6C14.3 7.4 15.5 7 17.5 7H21" />
+      <path d="m18.5 4 2.5 3-2.5 3M18.5 14l2.5 3-2.5 3" />
+    </svg>
+  );
+}
