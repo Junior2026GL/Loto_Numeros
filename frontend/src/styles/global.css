@@ -1332,3 +1332,47 @@ tbody tr:last-child td { border-bottom: 0; }
 .sync-result strong { font-size: 22px; }
 .sync-result span { color: var(--color-muted); font-size: 12.5px; }
 .sync-detail { margin: 14px 0 0; padding: 12px 14px; max-height: 180px; overflow: auto; border-radius: var(--radius-sm); background: #f2f4f8; font-size: 12.5px; line-height: 1.6; white-space: pre-wrap; }
+
+/* ---- Estadísticas ---- */
+.stats-disclaimer { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 18px; line-height: 1.55; }
+.stats-disclaimer svg { flex-shrink: 0; margin-top: 2px; }
+.stats-filters { display: flex; gap: 16px; flex-wrap: wrap; }
+.stats-filters > div { min-width: 220px; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 0 20px; }
+.panel-note { margin: -6px 0 14px; color: var(--color-muted); font-size: 13px; line-height: 1.5; }
+.balls-row.wide { gap: 12px 10px; }
+.ball-with-caption { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.ball-with-caption small { color: var(--color-muted); font-size: 11.5px; text-align: center; }
+
+.freq-chart { position: relative; display: grid; grid-template-columns: repeat(33, minmax(0, 1fr)); gap: 3px; height: 230px; padding-top: 4px; }
+.freq-col { display: flex; flex-direction: column; align-items: center; min-width: 0; height: 100%; }
+.freq-value { font-size: 10px; color: var(--color-muted); height: 14px; }
+.freq-bar-area { position: relative; flex: 1; width: 100%; display: flex; align-items: flex-end; }
+.freq-bar-fill { width: 100%; border-radius: 3px 3px 0 0; background: linear-gradient(180deg, #ffd34d, #e8a400); }
+.freq-bar-fill.hot { background: linear-gradient(180deg, #ef5350, #b71c1c); }
+.freq-bar-fill.zero { background: #4fc3f7; }
+.freq-label { font-size: 9.5px; color: var(--color-muted); margin-top: 4px; }
+/* La línea "esperado" se posiciona sobre el área de barras (descuenta alto de valor y etiqueta). */
+.freq-expected { position: absolute; left: 0; right: 0; height: 0; border-top: 2px dashed #667085; pointer-events: none; margin-bottom: 18px; z-index: 1; }
+.chart-legend { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 14px; color: var(--color-muted); font-size: 12.5px; }
+.chart-legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+.chart-legend .dot.gold { background: #e8a400; }
+.chart-legend .dot.hot { background: #ef5350; }
+.chart-legend .dot.line { width: 16px; height: 0; border-radius: 0; border-top: 2px dashed #667085; }
+
+.pairs-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.pair-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: #f3ecfa; border: 1px solid #e2d2f3; font-size: 14px; color: #6a2f96; }
+.pair-chip small { color: var(--color-muted); font-size: 11.5px; }
+
+.parity-list { display: grid; gap: 8px; }
+.parity-row { display: grid; grid-template-columns: 150px 1fr 32px; align-items: center; gap: 10px; font-size: 13px; }
+.parity-track { height: 10px; border-radius: 999px; background: #edf0f5; overflow: hidden; }
+.parity-fill { height: 100%; border-radius: 999px; background: var(--color-primary); }
+.parity-row b { text-align: right; }
+
+@media (max-width: 720px) {
+  .freq-chart { height: 190px; gap: 1px; }
+  .freq-value { font-size: 8px; }
+  .freq-label { font-size: 8px; }
+  .stats-grid { grid-template-columns: 1fr; }
+}

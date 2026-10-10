@@ -4,6 +4,7 @@ import usersRoutes from '../modules/users/users.routes.js';
 import auditRoutes from '../modules/audit/audit.routes.js';
 import drawsRoutes from '../modules/draws/draws.routes.js';
 import syncRoutes from '../modules/sync/sync.routes.js';
+import statsRoutes from '../modules/stats/stats.routes.js';
 import * as authController from '../modules/auth/auth.controller.js';
 import { authRequired } from '../shared/middleware/auth.middleware.js';
 
@@ -22,5 +23,6 @@ router.use('/users', usersRoutes);
 router.use('/auditoria', auditRoutes);
 router.use('/sorteos', drawsRoutes);
 router.use('/sincronizacion', syncRoutes);
+router.use('/estadisticas', statsRoutes);
 
 export default router;
