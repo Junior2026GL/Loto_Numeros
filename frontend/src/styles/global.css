@@ -1530,3 +1530,27 @@ tbody tr:last-child td { border-bottom: 0; }
 }
 
 .play-select { width: auto; min-width: 150px; padding: 7px 10px; font-size: 13px; }
+
+/* ---- Combinaciones: pasos y opciones más claras ---- */
+.step-head { display: flex; align-items: flex-start; gap: 14px; flex-wrap: wrap; }
+.step-num {
+  flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--color-primary); color: #fff; font-weight: 800; font-size: 15px;
+}
+.btn-big { padding: 13px 26px; font-size: 16px; font-weight: 700; }
+.options-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+.badge-dot { width: 8px; height: 8px; border-radius: 50%; background: #e8a400; display: inline-block; }
+.options-box { margin-top: 20px; padding: 20px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: #fafbfd; }
+.options-box h4 { margin: 0 0 6px; font-size: 15px; }
+.mode-toggle { display: inline-flex; gap: 6px; padding: 4px; background: #eef1f7; border-radius: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.mode-btn { border: 0; background: transparent; padding: 8px 16px; border-radius: 9px; font-weight: 600; font-size: 14px; color: var(--color-muted); cursor: pointer; }
+.mode-btn.active.want { background: #fff4c2; color: #6b4a00; box-shadow: 0 1px 3px rgba(16, 24, 40, .15); }
+.mode-btn.active.avoid { background: #fdeeee; color: #b42318; box-shadow: 0 1px 3px rgba(16, 24, 40, .15); }
+.pick-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 22px; margin-top: 14px; font-size: 13.5px; color: var(--color-muted); }
+.pick-summary .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+.pick-summary .dot.gold { background: #e8a400; }
+.pick-summary .dot.red { background: #ef5350; }
+.amount-row { display: grid; gap: 6px; margin-top: 16px; }
+.tab-help { margin: -6px 0 16px; color: var(--color-muted); font-size: 14px; }
+.panel-soft { background: #fafbfd; box-shadow: none; }

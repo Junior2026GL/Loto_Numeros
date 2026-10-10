@@ -9,12 +9,13 @@ import BudgetPanel from '../components/BudgetPanel.jsx';
 import AnalysisPanel from '../components/AnalysisPanel.jsx';
 import { getSummary as getDrawsSummary } from '../../draws/services/draws.service.js';
 
+// [id, nombre de la pestaña, qué se hace en ella]
 const TABS = [
-  ['generador', 'Generador'],
-  ['cobertura', 'Cobertura'],
-  ['mis', 'Mis combinaciones'],
-  ['presupuesto', 'Presupuesto'],
-  ['analisis', 'Análisis'],
+  ['generador', 'Generar', 'Genera combinaciones y guárdalas para el próximo sorteo.'],
+  ['cobertura', 'Cobertura', 'Reparte un grupo de tus números en varios boletos para asegurar un premio menor.'],
+  ['mis', 'Mis combinaciones', 'Tus combinaciones guardadas: márcalas como jugadas y registra lo que ganes.'],
+  ['presupuesto', 'Presupuesto', 'Cuánto llevas gastado y ganado, y tu límite mensual.'],
+  ['analisis', 'Análisis', 'Probabilidades reales y una prueba de las estrategias con sorteos pasados.'],
 ];
 
 export default function CombosPage() {
@@ -28,6 +29,7 @@ export default function CombosPage() {
 
   // Cualquier cambio (guardar, jugar, premio, borrar) refresca las pestañas que muestran datos.
   const changed = () => setReload((n) => n + 1);
+  const help = TABS.find(([id]) => id === tab)?.[2];
 
   return (
     <>
@@ -39,9 +41,8 @@ export default function CombosPage() {
       <div className="alert stats-disclaimer">
         <IconAlert width={17} height={17} />
         <span>
-          <b>Ninguna herramienta de esta pantalla aumenta tu probabilidad de ganar.</b> En un sorteo justo todas las
-          combinaciones tienen exactamente la misma probabilidad, y a largo plazo el juego pierde dinero. Sirven para
-          jugar con método y llevar el control, no para predecir. Juega con responsabilidad.
+          <b>Ninguna herramienta aumenta tu probabilidad de ganar:</b> todas las combinaciones tienen la misma
+          probabilidad. Sirven para jugar con método y llevar el control. Juega con responsabilidad.
         </span>
       </div>
 
@@ -59,6 +60,7 @@ export default function CombosPage() {
           </button>
         ))}
       </div>
+      <p className="tab-help">{help}</p>
 
       {tab === 'generador' && (
         <>

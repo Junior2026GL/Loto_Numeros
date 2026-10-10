@@ -34,10 +34,10 @@ export default function ManualPanel({ nextDraw, onSaved }) {
   }
 
   return (
-    <form className="panel" onSubmit={save}>
-      <h3 className="panel-title">Mi propia combinación</h3>
+    <form className="panel panel-soft" onSubmit={save}>
+      <h3 className="panel-title">¿Ya tienes tus propios números?</h3>
       <p className="panel-note">
-        Escribe los {PICK} números que quieres jugar (del 1 al 33)
+        Escríbelos aquí ({PICK} números distintos, del 1 al 33) y guárdalos
         {nextDraw && <> para el sorteo del <b>{capitalize(dayName(nextDraw.dia_semana))} {formatDate(nextDraw.fecha)}</b></>}.
       </p>
       <div className="manual-inputs">
