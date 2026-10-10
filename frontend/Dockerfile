@@ -3,8 +3,9 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-# La API se sirve desde el mismo dominio (nginx reenvía /api al backend).
-ARG VITE_API_URL=/api
+# Dirección pública de la API tal como la ve el navegador. Se fija al compilar:
+# en Railway se define como variable del servicio (VITE_API_URL).
+ARG VITE_API_URL=http://localhost:4000/api
 ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 

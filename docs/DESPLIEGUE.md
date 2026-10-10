@@ -70,6 +70,28 @@ server {
 }
 ```
 
+## Alternativa: Railway (tres servicios: MySQL, backend y frontend)
+Crea el proyecto desde el repositorio de GitHub. Cada servicio de código usa su carpeta (**Root Directory**:
+`backend` y `frontend`) y se construye con el `Dockerfile` que tiene.
+
+**1. MySQL** (plantilla de Railway). Para cargar las tablas desde tu PC activa temporalmente
+*Settings > Networking > Add Public Access*, ejecuta en `backend` (con `DB_HOST`, `DB_PORT`, `DB_USER`,
+`DB_PASSWORD` apuntando al host y puerto públicos) `npm run db:setup`, y **quita el acceso público** al terminar.
+Railway crea la base con el nombre `railway`: usa ese mismo nombre en `DB_NAME` (en el comando y en el backend).
+
+**2. Backend** (`backend`). Variables: `NODE_ENV=production`, `PORT=4000`, un `JWT_SECRET` aleatorio de 32+
+caracteres, `FRONTEND_URL` (la dirección pública del frontend, sin `/` al final), `TRUST_PROXY=1`, `DB_HOST`
+(`mysql.railway.internal`), `DB_PORT=3306`, `DB_USER=root`, `DB_PASSWORD=${{MySQL.MYSQLPASSWORD}}`, `DB_NAME` y
+`SYNC_AUTO=true`. En *Settings > Networking > Generate Domain* usa el puerto **4000**.
+
+**3. Frontend** (`frontend`). Variable: `VITE_API_URL=https://<dominio-del-backend>/api`. Se aplica **al compilar**,
+así que si la cambias hay que volver a desplegar. En *Generate Domain* usa el puerto **80** (nginx).
+
+Errores que ya aparecieron y su causa:
+- `En producción JWT_SECRET debe estar definido…` → falta la variable `JWT_SECRET` (o es débil).
+- `Unknown database 'loto_numeros'` → el nombre de `DB_NAME` no coincide con la base donde se crearon las tablas.
+- `host not found in upstream "backend"` (frontend) → corregido: nginx ya no hace proxy; solo sirve la aplicación.
+
 ## Alternativa: Docker (sin probar)
 Se incluyen `docker-compose.yml` y los `Dockerfile`, pero **no pude probarlos** (no había Docker disponible):
 espera tener que ajustarlos.

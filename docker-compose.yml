@@ -41,9 +41,15 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-}
+    ports:
+      - "4000:4000"
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        # Dirección de la API tal como la ve el navegador (se fija al compilar).
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:4000/api}
     restart: unless-stopped
     depends_on:
       - backend
