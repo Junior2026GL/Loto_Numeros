@@ -85,7 +85,9 @@ caracteres, `FRONTEND_URL` (la dirección pública del frontend, sin `/` al fina
 `SYNC_AUTO=true`. En *Settings > Networking > Generate Domain* usa el puerto **4000**.
 
 **3. Frontend** (`frontend`). Variable: `VITE_API_URL=https://<dominio-del-backend>/api`. Se aplica **al compilar**,
-así que si la cambias hay que volver a desplegar. En *Generate Domain* usa el puerto **80** (nginx).
+así que si la cambias hay que volver a desplegar. nginx escucha en la variable `PORT` (80 por defecto): define
+`PORT=8080` y apunta el dominio al **8080**, como en otros servicios de Railway. Lo importante es que el puerto del
+dominio y `PORT` coincidan.
 
 Errores que ya aparecieron y su causa:
 - `En producción JWT_SECRET debe estar definido…` → falta la variable `JWT_SECRET` (o es débil).
