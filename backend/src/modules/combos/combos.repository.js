@@ -1,8 +1,11 @@
 import { db } from '../../infrastructure/database/mysql.js';
 
-const COLUMNS = `id, estrategia, numeros, fecha_sorteo_objetivo, jugada, aciertos, evaluada_at, created_at`;
+const COLUMNS = `id, estrategia, numeros, fecha_sorteo_objetivo, jugada, costo, premio, aciertos, evaluada_at, created_at`;
 
 const toDateString = (value) => (value ? String(value).slice(0, 10) : null);
+
+/** MySQL devuelve los DECIMAL como texto: se convierten a número (o null si no hay valor). */
+const toMoney = (value) => (value === null || value === undefined ? null : Number(value));
 
 /** mysql2 devuelve JSON ya convertido, pero por seguridad aceptamos también texto. */
 const parseNumbers = (value) => (typeof value === 'string' ? JSON.parse(value) : value);
@@ -13,6 +16,8 @@ function normalize(row) {
     numeros: parseNumbers(row.numeros),
     fecha_sorteo_objetivo: toDateString(row.fecha_sorteo_objetivo),
     jugada: Boolean(row.jugada),
+    costo: toMoney(row.costo),
+    premio: toMoney(row.premio),
   };
 }
 
@@ -52,8 +57,18 @@ export async function listCombinations({ usuarioId, juegoId, page, pageSize, max
   return { items: rows.map(normalize), total: Number(total) };
 }
 
-export async function setPlayed(id, usuarioId, jugada) {
-  await db.query('UPDATE combinaciones SET jugada = ? WHERE id = ? AND usuario_id = ?', [jugada ? 1 : 0, id, usuarioId]);
+/** Marca como jugada (guardando lo que costó) o la desmarca (y borra costo y premio). */
+export async function setPlayed(id, usuarioId, jugada, costo = null) {
+  await db.query(
+    jugada
+      ? 'UPDATE combinaciones SET jugada = 1, costo = ? WHERE id = ? AND usuario_id = ?'
+      : 'UPDATE combinaciones SET jugada = 0, costo = NULL, premio = NULL WHERE id = ? AND usuario_id = ?',
+    jugada ? [costo, id, usuarioId] : [id, usuarioId]
+  );
+}
+
+export async function setPrize(id, usuarioId, premio) {
+  await db.query('UPDATE combinaciones SET premio = ? WHERE id = ? AND usuario_id = ?', [premio, id, usuarioId]);
 }
 
 export async function deleteOwned(id, usuarioId) {
@@ -133,4 +148,35 @@ export async function performanceByStrategy(usuarioId, juegoId) {
     promedio: r.promedio === null ? null : Math.round(Number(r.promedio) * 100) / 100,
     maximo: r.maximo === null ? null : Number(r.maximo),
   }));
+}
+
+/** Gasto, premios y cantidad de combinaciones jugadas de un usuario. `desde`/`hasta` (hasta excluido) son opcionales. */
+export async function spending(usuarioId, juegoId, { desde = null, hasta = null } = {}) {
+  const where = ['usuario_id = ?', 'juego_id = ?', 'jugada = 1'];
+  const params = [usuarioId, juegoId];
+  if (desde) {
+    where.push('fecha_sorteo_objetivo >= ?');
+    params.push(desde);
+  }
+  if (hasta) {
+    where.push('fecha_sorteo_objetivo < ?');
+    params.push(hasta);
+  }
+  const [[row]] = await db.query(
+    'SELECT COALESCE(SUM(costo), 0) AS gastado, COALESCE(SUM(premio), 0) AS ganado, COUNT(*) AS jugadas FROM combinaciones WHERE ' + where.join(' AND '),
+    params
+  );
+  return { gastado: Number(row.gastado), ganado: Number(row.ganado), jugadas: Number(row.jugadas) };
+}
+
+export async function getMonthlyLimit(usuarioId) {
+  const [rows] = await db.query('SELECT limite_mensual FROM preferencias_usuario WHERE usuario_id = ? LIMIT 1', [usuarioId]);
+  return rows[0]?.limite_mensual === null || rows[0] === undefined ? null : Number(rows[0].limite_mensual);
+}
+
+export async function setMonthlyLimit(usuarioId, limite) {
+  await db.query(
+    'INSERT INTO preferencias_usuario (usuario_id, limite_mensual) VALUES (?, ?) ON DUPLICATE KEY UPDATE limite_mensual = VALUES(limite_mensual)',
+    [usuarioId, limite]
+  );
 }

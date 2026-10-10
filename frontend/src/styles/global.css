@@ -1451,3 +1451,80 @@ tbody tr:last-child td { border-bottom: 0; }
 @media (prefers-reduced-motion: reduce) {
   .float-ball { animation: none; }
 }
+
+/* ---- Combinaciones: pestañas, selector de números, presupuesto ---- */
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 18px 0; padding: 5px; background: #eef1f7; border-radius: 14px; width: fit-content; max-width: 100%; }
+.tab { border: 0; background: transparent; padding: 9px 16px; border-radius: 10px; font-weight: 600; font-size: 14px; color: var(--color-muted); cursor: pointer; }
+.tab:hover { color: var(--color-text); }
+.tab.active { background: #fff; color: var(--color-primary-dark); box-shadow: 0 1px 3px rgba(16, 24, 40, .12); }
+
+.num-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); gap: 8px; max-width: 640px; }
+.num-cell {
+  height: 44px; border-radius: 12px; border: 1px solid var(--color-border); background: #fff;
+  font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; color: var(--color-text); cursor: pointer;
+}
+.num-cell:hover:not(:disabled) { border-color: var(--color-primary); background: var(--color-primary-soft); }
+.num-cell.fixed, .num-cell.selected { color: #3b2a00; border-color: #e8a400; background: radial-gradient(circle at 32% 28%, #fff4c2 0%, #ffd34d 55%, #f0b000 100%); }
+.num-cell.excluded { color: #b42318; border-color: #f6c4be; background: #fdeeee; text-decoration: line-through; }
+
+.legend { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin: 14px 0 0; color: var(--color-muted); font-size: 13px; }
+.legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+.legend .dot.gold { background: #e8a400; }
+.legend .dot.red { background: #ef5350; }
+.legend .dot.plain { background: #fff; border: 1px solid #98a2b3; }
+
+.options-row { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; margin-top: 18px; }
+.check-row { display: flex; gap: 12px; align-items: flex-start; max-width: 460px; cursor: pointer; }
+.check-row input { width: auto; margin-top: 3px; }
+.check-row span { display: grid; gap: 2px; }
+.check-row small { color: var(--color-muted); font-size: 12.5px; line-height: 1.45; }
+
+.combo-desc { margin: 0 0 4px !important; }
+.combo-line { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding-top: 10px; border-top: 1px solid #edf0f5; }
+.combo-line:first-of-type { border-top: 0; padding-top: 0; }
+.combo-line-actions { display: flex; align-items: center; gap: 6px; }
+.wheel-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 10px; }
+.wheel-ticket { padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: #fff; }
+
+.chips-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip-btn { border: 1px solid var(--color-border); background: #fff; padding: 6px 14px; border-radius: 999px; font-weight: 600; font-size: 13px; cursor: pointer; }
+.chip-btn.active { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+.dist-title { margin: 18px 0 8px; font-size: 14px; }
+.dist-bars { display: grid; gap: 6px; }
+.dist-row { display: grid; grid-template-columns: 96px 1fr 32px; align-items: center; gap: 10px; font-size: 13px; }
+.dist-track { height: 10px; border-radius: 999px; background: #edf0f5; overflow: hidden; }
+.dist-fill { height: 100%; border-radius: 999px; background: #e8a400; }
+.dist-row b { text-align: right; }
+
+.money-cell { display: grid; gap: 2px; font-size: 13px; }
+.money-neg { color: #b42318; }
+.limit-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.limit-form input { max-width: 200px; }
+.budget-meter { margin-bottom: 16px; }
+.budget-meter-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; font-size: 14px; }
+.progress-track { height: 12px; border-radius: 999px; background: #edf0f5; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 999px; background: #43a86b; transition: width .25s ease; }
+.progress-fill.near { background: #e8a400; }
+.progress-fill.over { background: #ef5350; }
+
+@media (max-width: 720px) {
+  .tabs { width: 100%; }
+  .tab { flex: 1 1 auto; padding: 8px 10px; font-size: 13px; }
+  .num-grid { grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 6px; }
+  .num-cell { height: 40px; }
+}
+
+/* ---- Maquetación general en pantallas pequeñas ---- */
+/* Sin esto, un hijo ancho (tabla, pestañas...) ensancha toda la página en lugar de desplazarse dentro de su caja. */
+.app-shell > *, .content { min-width: 0; }
+
+@media (max-width: 900px) {
+  /* El menú pasa de columna a una barra horizontal que se desliza con el dedo. */
+  .sidebar { padding: 12px 14px; gap: 12px; flex-direction: row; align-items: center; }
+  .sidebar > div:first-child { flex-shrink: 0; }
+  .sidebar nav { display: flex; flex-direction: row; gap: 6px; flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  .sidebar nav::-webkit-scrollbar { display: none; }
+  .nav-link { flex-shrink: 0; white-space: nowrap; padding: 8px 12px; }
+  .nav-link.active::before { display: none; }
+  .topbar { padding-left: 16px; padding-right: 16px; }
+}

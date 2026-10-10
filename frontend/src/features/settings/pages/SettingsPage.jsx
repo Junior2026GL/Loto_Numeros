@@ -63,6 +63,24 @@ export default function SettingsPage() {
             <p className="auth-hint">Un número es «caliente» si se repitió mucho en este número de sorteos más recientes.</p>
           </div>
 
+          <h3 className="panel-title" style={{ marginTop: 26 }}>Precio del boleto</h3>
+          <div className="settings-field">
+            <label>Lo que cuesta jugar una combinación (L)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              inputMode="decimal"
+              value={form.precioBoleto ?? ''}
+              onChange={(e) => setForm({ ...form, precioBoleto: e.target.value })}
+              required
+            />
+            <p className="auth-hint">
+              Se usa para calcular el gasto de cada usuario en Combinaciones y el costo de los sistemas de cobertura.
+              Pon el precio real del boleto.
+            </p>
+          </div>
+
           <h3 className="panel-title" style={{ marginTop: 26 }}>Puntaje de cada número</h3>
           <p className="panel-note">
             El puntaje combina tres factores. Los pesos se ajustan solos para sumar 100 %, así que no hace falta que
