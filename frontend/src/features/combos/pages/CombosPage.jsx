@@ -382,7 +382,7 @@ export default function CombosPage() {
             <p className="panel-note" style={{ margin: '12px 0 0' }}>
               Con {backtest.sorteosEvaluados} sorteos evaluados y {backtest.combinacionesPorSorteo} combinaciones por sorteo.
               Por azar se esperan <b>{backtest.promedioPorAzar}</b> aciertos. Si una estrategia dice
-              "Igual al azar", su diferencia cae dentro del margen de error: es ruido, no una ventaja real.
+              «Igual al azar», su diferencia cae dentro del margen de error: es ruido, no una ventaja real.
             </p>
           </>
         ))}

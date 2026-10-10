@@ -6,6 +6,10 @@
 --
 -- Es seguro ejecutarlo más de una vez: no borra nada y no duplica datos.
 -- Ejecución:  mysql -u root -p < setup.sql      (o abrirlo en MySQL Workbench)
+--
+-- IMPORTANTE: después de este script ejecuta  npm run migrate  (en la carpeta backend).
+-- Este archivo es la base inicial; los cambios posteriores (contraseñas temporales, sesiones,
+-- recuperación por correo...) están en la carpeta migrations/.
 -- ============================================================================
 
 CREATE DATABASE IF NOT EXISTS loto_numeros

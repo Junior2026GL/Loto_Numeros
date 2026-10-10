@@ -1,30 +1,39 @@
 # Loto Números
 
-React + Vite (frontend), Node.js + Express (backend) y MySQL.
+Sistema para consultar los resultados del Loto SuperPremio Honduras, analizar el historial y llevar el
+seguimiento de combinaciones. React + Vite (frontend), Node.js + Express (backend) y MySQL.
+
+> Las estadísticas y las combinaciones son herramientas descriptivas. **Ninguna aumenta la probabilidad de ganar:**
+> cada sorteo es independiente y todas las combinaciones son igual de probables.
 
 ## Carpetas principales
 
-- `backend/src/config/`: configuración del servidor
-- `backend/src/infrastructure/database/`: acceso MySQL, migraciones y seeds
-- `backend/src/modules/`: módulos del API (`auth`, `users`, `audit`)
+- `backend/src/modules/`: módulos del API (`auth`, `users`, `audit`, `draws`, `sync`, `stats`, `combos`, `settings`)
+- `backend/src/infrastructure/`: MySQL (`setup.sql` y migraciones), correo y cliente de loto.hn
 - `backend/src/shared/`: middleware, constantes y utilidades
-- `frontend/src/app/`: aplicación y rutas React
-- `frontend/src/components/`: componentes reutilizables
-- `frontend/src/features/`: vistas y servicios por funcionalidad
-- `frontend/src/layouts/`: navegación y diseño
-- `frontend/src/styles/`: estilos globales
-- `docs/`: documentación
+- `backend/test/`: pruebas de la API
+- `frontend/src/features/`: pantallas y servicios por funcionalidad
+- `docs/`: arquitectura y guía de publicación
 
 ## Arranque local
 
-1. Ejecuta `backend/src/infrastructure/database/setup.sql` en MySQL: crea la base, las tablas, los roles, el juego, el historial 2026 y el Super Admin.
-2. Si solo necesitas roles y usuarios, usa `usuarios_y_roles.sql` (requiere haber ejecutado antes `setup.sql`).
-3. En `backend`, copia `.env.example` a `.env`, configura credenciales, ejecuta `npm install` y `npm run dev`.
-4. En `frontend`, copia `.env.example` a `.env`, ejecuta `npm install` y `npm run dev`.
-5. Accede a `http://localhost:5173`.
+1. En MySQL ejecuta `backend/src/infrastructure/database/setup.sql` (crea la base, tablas, roles, el juego, el historial inicial y el superadmin).
+2. En `backend`: copia `.env.example` a `.env` y pon tu `DB_PASSWORD`; luego `npm install`, **`npm run migrate`** y `npm run dev`.
+3. En `frontend`: copia `.env.example` a `.env`, `npm install` y `npm run dev`.
+4. Abre `http://localhost:5173`. El superadmin debe cambiar su contraseña inicial en el primer ingreso.
+5. Entra a **Sincronización** y pulsa "Sincronizar ahora" para traer los resultados que falten.
+
+## Comandos útiles (en `backend`)
+
+| Comando | Qué hace |
+|---|---|
+| `npm run migrate` | Aplica las migraciones pendientes de la base de datos |
+| `npm test` | Pruebas unitarias de la lógica pura |
+| `npm run test:api` | Pruebas de la API (crea y usa la base `loto_numeros_test`) |
+| `npm run lint` | ESLint (también en `frontend`) |
+| `npm run backup` / `npm run restore` | Copia de seguridad y restauración de la base |
 
 ## Más información
 
 - Arquitectura: `docs/ARQUITECTURA.md`
-- Cómo publicar el sistema y hacer copias de seguridad: `docs/DESPLIEGUE.md`
-- Pruebas del backend: `cd backend && npm test`
+- Cómo publicar el sistema, copias de seguridad y Docker: `docs/DESPLIEGUE.md`

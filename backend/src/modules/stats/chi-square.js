@@ -7,8 +7,8 @@ const MAX_ITERATIONS = 500;
 /** log Gamma(x) por la aproximación de Lanczos. */
 function logGamma(x) {
   const c = [
-    76.18009172947146, -86.50532032941677, 24.01409824083091,
-    -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5,
+    76.1800917294715, -86.5053203294168, 24.0140982408309,
+    -1.23173957245016, 0.120865097386618e-2, -0.5395239384953e-5,
   ];
   let y = x;
   let tmp = x + 5.5;
@@ -18,7 +18,7 @@ function logGamma(x) {
     y += 1;
     series += coefficient / y;
   }
-  return -tmp + Math.log((2.5066282746310005 * series) / x);
+  return -tmp + Math.log((Math.sqrt(2 * Math.PI) * series) / x);
 }
 
 /** Función gamma incompleta regularizada superior Q(a, x). */

@@ -13,7 +13,7 @@ function cell(value) {
 export function toCsv(rows, columns) {
   const lines = [columns.map((c) => cell(c.header)).join(',')];
   for (const row of rows) lines.push(columns.map((c) => cell(c.value(row))).join(','));
-  return `﻿${lines.join('\r\n')}\r\n`;
+  return `\uFEFF${lines.join('\r\n')}\r\n`;
 }
 
 export function sendCsv(res, filename, csv) {

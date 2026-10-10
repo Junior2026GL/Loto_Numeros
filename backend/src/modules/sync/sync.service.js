@@ -4,7 +4,6 @@ import {
   addDays,
   diffDays,
   drawDatesBetween,
-  nowInHonduras,
   todayInHonduras,
   weekdayOf,
 } from '../../shared/utils/dates.js';

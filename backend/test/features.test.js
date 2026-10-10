@@ -93,7 +93,7 @@ test('exportar sorteos a CSV respeta los filtros y requiere sesión', async () =
   assert.equal(all.status, 200);
   assert.match(all.type, /text\/csv/);
   assert.match(all.disposition, /sorteos\.csv/);
-  const lines = all.text.replace(/^﻿/, '').trim().split('\r\n');
+  const lines = all.text.replace(/^\uFEFF/, '').trim().split('\r\n');
   assert.equal(lines[0], 'Fecha,Día,Número 1,Número 2,Número 3,Número 4,Número 5,Número 6,Origen');
   assert.equal(lines.length, 23); // encabezado + 22 sorteos, todos (no solo la primera página)
   assert.equal(lines[1], '2026-07-15,miércoles,8,11,15,18,19,29,IMPORTACION');
@@ -120,12 +120,12 @@ test('exportar combinaciones: incluye todas las del usuario, con aciertos y resu
 
   const csv = await download('/combinaciones/exportar', tokens.NORMAL);
   assert.equal(csv.status, 200);
-  const lines = csv.text.replace(/^﻿/, '').trim().split('\r\n');
+  const lines = csv.text.replace(/^\uFEFF/, '').trim().split('\r\n');
   assert.equal(lines[0], 'Creada,Estrategia,Números,Sorteo,Resultado,Aciertos,Jugada');
   assert.ok(lines.length >= 62, `solo ${lines.length} líneas`);
   assert.ok(lines.some((l) => l.includes('8-11-15-18-19-29,2026-07-15,8-11-15-18-19-29,6,No')));
 
   // Cada usuario exporta solo lo suyo.
   const other = await download('/combinaciones/exportar', tokens.ADMIN);
-  assert.equal(other.text.replace(/^﻿/, '').trim().split('\r\n').length, 1);
+  assert.equal(other.text.replace(/^\uFEFF/, '').trim().split('\r\n').length, 1);
 });

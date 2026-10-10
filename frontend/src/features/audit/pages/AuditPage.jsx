@@ -177,7 +177,7 @@ export default function AuditPage() {
     getAuditStats({ hoy: hoyRango.desde, desdeSemana: semanaRango.desde })
       .then(setStats)
       .catch(console.error);
-  }, [recarga]);
+  }, [recarga, hoyRango.desde, semanaRango.desde]);
 
   useEffect(() => {
     const timer = setTimeout(() => {

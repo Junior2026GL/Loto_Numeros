@@ -10,7 +10,9 @@
     "backup": "node scripts/backup-db.js",
     "migrate": "node scripts/migrate.js",
     "test:api": "node --test --test-concurrency=1 \"test/**/*.test.js\"",
-    "test:all": "npm test && npm run test:api"
+    "test:all": "npm test && npm run test:api",
+    "lint": "eslint src scripts test",
+    "restore": "node scripts/restore-db.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -23,5 +25,10 @@
     "mysql2": "^3.11.4",
     "nodemailer": "^10.0.16",
     "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "globals": "^17.13.0"
   }
 }

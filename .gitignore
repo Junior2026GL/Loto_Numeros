@@ -8,3 +8,6 @@ backend/storage/*
 
 # Copias de seguridad de la base de datos (contienen datos reales)
 backend/backups/
+
+# Variables de Docker Compose (contienen contraseñas)
+/.env

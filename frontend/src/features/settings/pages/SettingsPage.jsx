@@ -60,7 +60,7 @@ export default function SettingsPage() {
               onChange={(e) => setForm({ ...form, ventanaCalientes: e.target.value })}
               required
             />
-            <p className="auth-hint">Un número es "caliente" si se repitió mucho en este número de sorteos más recientes.</p>
+            <p className="auth-hint">Un número es «caliente» si se repitió mucho en este número de sorteos más recientes.</p>
           </div>
 
           <h3 className="panel-title" style={{ marginTop: 26 }}>Puntaje de cada número</h3>
