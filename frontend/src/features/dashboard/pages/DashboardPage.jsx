@@ -3,22 +3,28 @@ import { Link } from 'react-router-dom';
 import PageHeader from '../../../components/PageHeader.jsx';
 import { BallsRow } from '../../../components/LotteryBall.jsx';
 import LotteryBall from '../../../components/LotteryBall.jsx';
-import { IconCalendar, IconClock, IconLogbook, IconArrowRight } from '../../../components/icons.jsx';
+import { IconAlert, IconCalendar, IconClock, IconLogbook, IconArrowRight } from '../../../components/icons.jsx';
 import { getSummary } from '../../draws/services/draws.service.js';
+import { getSyncStatus } from '../../sync/services/sync.service.js';
+import { getUser } from '../../auth/session.js';
 import { capitalize, dayName, formatDate } from '../../../utils/dates.js';
 
 export default function DashboardPage() {
-  const user = JSON.parse(localStorage.getItem('loto_numeros_user') || 'null');
+  const user = getUser();
+  const isAdmin = user?.rol === 'SUPER_ADMIN' || user?.rol === 'ADMIN';
   const [data, setData] = useState(null);
+  const [sync, setSync] = useState(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
     getSummary()
       .then(setData)
       .catch((err) => setError(err.response?.data?.message || 'No se pudo cargar el resumen'));
-  }, []);
+    if (isAdmin) getSyncStatus().then(setSync).catch(() => {});
+  }, [isAdmin]);
 
   const firstName = user?.nombre?.split(' ')[0];
+  const lastRunFailed = sync?.ultimaEjecucion?.estado === 'FALLIDA';
 
   return (
     <>
@@ -28,6 +34,28 @@ export default function DashboardPage() {
       />
 
       {error && <div className="alert error" style={{ marginBottom: 16 }}>{error}</div>}
+
+      {isAdmin && lastRunFailed && (
+        <div className="alert error dash-notice">
+          <IconAlert width={17} height={17} />
+          <span>
+            <b>La última sincronización con loto.hn falló.</b>{' '}
+            {sync.ultimaEjecucion.detalle?.split('\n')[0]}{' '}
+            <Link to="/sincronizacion">Revisar</Link>
+          </span>
+        </div>
+      )}
+
+      {data?.pendientes > 0 && (
+        <div className="alert dash-notice">
+          <IconAlert width={17} height={17} />
+          <span>
+            Faltan <b>{data.pendientes}</b> sorteo{data.pendientes === 1 ? '' : 's'} por guardar: los resultados
+            que ves pueden no estar al día.{' '}
+            {isAdmin && <Link to="/sincronizacion">Sincronizar ahora</Link>}
+          </span>
+        </div>
+      )}
 
       <div className="card-grid">
         <div className="stat-card blue">

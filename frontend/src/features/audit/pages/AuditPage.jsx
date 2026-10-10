@@ -51,6 +51,8 @@ const accionLabels = {
   RESET_PASSWORD: 'Restablecer contraseña',
   ELIMINAR: 'Eliminación',
   SINCRONIZAR: 'Sincronización',
+  SOLICITUD_RESET_PASSWORD: 'Solicitud de recuperación',
+  RESET_PASSWORD_CORREO: 'Recuperación por correo',
 };
 
 const accionTones = {
@@ -64,6 +66,8 @@ const accionTones = {
   RESET_PASSWORD: 'purple',
   ELIMINAR: 'red',
   SINCRONIZAR: 'blue',
+  SOLICITUD_RESET_PASSWORD: 'gray',
+  RESET_PASSWORD_CORREO: 'purple',
 };
 
 const accionIcons = {
@@ -77,6 +81,8 @@ const accionIcons = {
   RESET_PASSWORD: IconLock,
   ELIMINAR: IconTrash,
   SINCRONIZAR: IconDownload,
+  SOLICITUD_RESET_PASSWORD: IconKey,
+  RESET_PASSWORD_CORREO: IconLock,
 };
 
 // Debe coincidir con ACCIONES_ALERTA del backend (audit.repository.js).

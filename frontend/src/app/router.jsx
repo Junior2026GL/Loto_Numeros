@@ -1,5 +1,9 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import LoginPage from '../features/auth/pages/LoginPage.jsx';
+import ForgotPasswordPage from '../features/auth/pages/ForgotPasswordPage.jsx';
+import ResetPasswordPage from '../features/auth/pages/ResetPasswordPage.jsx';
+import ChangePasswordRequiredPage from '../features/auth/pages/ChangePasswordRequiredPage.jsx';
+import { getToken, getUser } from '../features/auth/session.js';
 import DashboardPage from '../features/dashboard/pages/DashboardPage.jsx';
 import DrawsPage from '../features/draws/pages/DrawsPage.jsx';
 import CombosPage from '../features/combos/pages/CombosPage.jsx';
@@ -10,14 +14,14 @@ import AuditPage from '../features/audit/pages/AuditPage.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
 
 function Protected({ children, roles }) {
-  const token = localStorage.getItem('loto_numeros_token');
-  if (!token) return <Navigate to="/login" replace />;
+  if (!getToken()) return <Navigate to="/login" replace />;
 
-  if (roles) {
-    const user = JSON.parse(localStorage.getItem('loto_numeros_user') || 'null');
-    if (!user || !roles.includes(user.rol)) {
-      return <Navigate to="/" replace />;
-    }
+  const user = getUser();
+  // Con contraseña temporal solo se puede usar la pantalla de cambio de contraseña.
+  if (user?.debeCambiarPassword) return <Navigate to="/cambiar-password" replace />;
+
+  if (roles && (!user || !roles.includes(user.rol))) {
+    return <Navigate to="/" replace />;
   }
 
   return children;
@@ -25,6 +29,9 @@ function Protected({ children, roles }) {
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
+  { path: '/forgot-password', element: <ForgotPasswordPage /> },
+  { path: '/reset-password', element: <ResetPasswordPage /> },
+  { path: '/cambiar-password', element: <ChangePasswordRequiredPage /> },
   {
     path: '/',
     element: (

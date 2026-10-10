@@ -1,4 +1,5 @@
 import { rateLimit } from 'express-rate-limit';
+import { env } from '../../config/env.js';
 
 const tooMany = (message) => (req, res) => {
   res.status(429).json({ ok: false, message });
@@ -7,7 +8,7 @@ const tooMany = (message) => (req, res) => {
 /** Límite general de la API por IP: frena abusos y scripts descontrolados. */
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 600,
+  limit: env.rateLimit.api,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   handler: tooMany('Demasiadas solicitudes. Espera unos minutos e inténtalo de nuevo.'),
@@ -19,9 +20,18 @@ export const apiLimiter = rateLimit({
  */
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 20,
+  limit: env.rateLimit.login,
   skipSuccessfulRequests: true,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   handler: tooMany('Demasiados intentos fallidos desde tu conexión. Intenta de nuevo en 15 minutos.'),
+});
+
+/** Recuperación de contraseña: pocas solicitudes por IP para no usarla como cañón de correos ni adivinar códigos. */
+export const recoveryLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: env.rateLimit.recovery,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  handler: tooMany('Demasiadas solicitudes de recuperación. Intenta de nuevo en una hora.'),
 });

@@ -1,7 +1,12 @@
 import { z } from 'zod';
 import { AppError } from '../../shared/errors/AppError.js';
-import { DATE_REGEX, nowInHonduras, todayInHonduras, weekdayOf } from '../../shared/utils/dates.js';
+import { DATE_REGEX, addDays, drawDatesBetween, nowInHonduras, todayInHonduras, weekdayOf } from '../../shared/utils/dates.js';
 import * as repository from './draws.repository.js';
+
+// Minutos después de la hora del sorteo en que ya se espera que el resultado esté publicado.
+const PUBLISH_GRACE_MINUTES = 15;
+// Primera fecha con resultados en la fuente (loto.hn no tiene sorteos anteriores).
+export const FIRST_DRAW_DATE = '2026-01-01';
 
 const createSchema = z.object({
   fecha: z.string().regex(DATE_REGEX, 'La fecha debe tener formato AAAA-MM-DD'),
@@ -47,6 +52,24 @@ export async function upcomingDraw() {
   return nextDraw(await getGame());
 }
 
+/** Hoy aún no cuenta como pendiente si el resultado todavía no se espera publicado. */
+export function isPublished(fecha, game) {
+  if (fecha !== todayInHonduras()) return true;
+  const [hh, mm] = game.hora_sorteo.split(':').map(Number);
+  const now = nowInHonduras();
+  return now.getUTCHours() * 60 + now.getUTCMinutes() >= hh * 60 + mm + PUBLISH_GRACE_MINUTES;
+}
+
+/** Sorteos que ya deberían existir pero no están guardados (desde el último guardado hasta hoy). */
+export async function missingDraws() {
+  const g = await getGame();
+  const last = await repository.findLastDrawDate(g.id);
+  const hoy = todayInHonduras();
+  const desde = last ? addDays(last, 1) : FIRST_DRAW_DATE;
+  const fechas = desde > hoy ? [] : drawDatesBetween(desde, hoy, g.dias).filter((f) => isPublished(f, g));
+  return { ultimoSorteo: last, pendientes: fechas.length, desde, hasta: hoy };
+}
+
 export async function game() {
   const { dias, ...rest } = await getGame();
   return { ...rest, dias_sorteo: dias };
@@ -73,10 +96,11 @@ export async function months() {
 
 export async function summary() {
   const g = await getGame();
-  const [ultimo, total, masFrecuente] = await Promise.all([
+  const [ultimo, total, masFrecuente, faltantes] = await Promise.all([
     repository.findLastDraw(g.id),
     repository.countDraws(g.id),
     repository.findMostFrequent(g.id),
+    missingDraws(),
   ]);
 
   return {
@@ -84,6 +108,7 @@ export async function summary() {
     ultimo,
     total,
     masFrecuente,
+    pendientes: faltantes.pendientes,
     proximo: nextDraw(g),
   };
 }

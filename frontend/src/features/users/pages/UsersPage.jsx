@@ -14,7 +14,6 @@ import {
   IconSearch,
   IconUser,
   IconMail,
-  IconPhone,
   IconShield,
   IconCalendar,
   IconCheck,
@@ -40,7 +39,7 @@ const roleMeta = {
   NORMAL: { desc: 'Usuario estándar.', tone: 'green' },
 };
 
-const emptyForm = { nombre: '', usuario: '', email: '', telefono: '', password: '', rol: 'NORMAL' };
+const emptyForm = { nombre: '', usuario: '', email: '', password: '', rol: 'NORMAL' };
 const PAGE_SIZE = 20;
 
 function initials(name) {
@@ -88,7 +87,7 @@ export default function UsersPage() {
   const [showCreate, setShowCreate] = useState(false);
 
   const [editingUser, setEditingUser] = useState(null);
-  const [editForm, setEditForm] = useState({ nombre: '', usuario: '', email: '', telefono: '', rol: '' });
+  const [editForm, setEditForm] = useState({ nombre: '', usuario: '', email: '', rol: '' });
   const [editSaving, setEditSaving] = useState(false);
 
   const [resettingUser, setResettingUser] = useState(null);
@@ -143,7 +142,6 @@ export default function UsersPage() {
       nombre: user.nombre,
       usuario: user.usuario,
       email: user.email || '',
-      telefono: user.telefono || '',
       rol: user.rol,
     });
   }
@@ -301,20 +299,8 @@ export default function UsersPage() {
                     />
                   </div>
                 </div>
-                <div>
-                  <label>Teléfono <span className="label-optional">(opcional)</span></label>
-                  <div className="input-icon">
-                    <IconPhone />
-                    <input
-                      type="tel"
-                      value={form.telefono}
-                      onChange={(e) => setForm({ ...form, telefono: e.target.value })}
-                      placeholder="9999-9999"
-                    />
-                  </div>
-                </div>
                 <div style={{ gridColumn: '1 / -1' }}>
-                  <label>Correo electrónico <span className="label-optional">(opcional)</span></label>
+                  <label>Correo electrónico <span className="label-optional">(necesario para recuperar la contraseña)</span></label>
                   <div className="input-icon">
                     <IconMail />
                     <input
@@ -349,10 +335,11 @@ export default function UsersPage() {
                   <PasswordField
                     value={form.password}
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    placeholder="Mín. 8 caracteres"
+                    placeholder="Mín. 8 caracteres, con letras y números"
                     autoComplete="new-password"
                   />
                   <PasswordStrengthMeter value={form.password} />
+                  <p className="auth-hint">Es una contraseña temporal: el usuario deberá cambiarla la primera vez que ingrese.</p>
                 </div>
               </div>
             </fieldset>
@@ -397,20 +384,8 @@ export default function UsersPage() {
                     />
                   </div>
                 </div>
-                <div>
-                  <label>Teléfono <span className="label-optional">(opcional)</span></label>
-                  <div className="input-icon">
-                    <IconPhone />
-                    <input
-                      type="tel"
-                      value={editForm.telefono}
-                      onChange={(e) => setEditForm({ ...editForm, telefono: e.target.value })}
-                      placeholder="9999-9999"
-                    />
-                  </div>
-                </div>
                 <div style={{ gridColumn: '1 / -1' }}>
-                  <label>Correo electrónico <span className="label-optional">(opcional)</span></label>
+                  <label>Correo electrónico <span className="label-optional">(necesario para recuperar la contraseña)</span></label>
                   <div className="input-icon">
                     <IconMail />
                     <input
@@ -468,7 +443,7 @@ export default function UsersPage() {
         >
           <form id="form-reset-password" className="form-stack" onSubmit={submitReset}>
             <div className="alert" style={{ marginBottom: 4 }}>
-              El usuario deberá usar esta contraseña en su próximo inicio de sesión.
+              Es una contraseña temporal: el usuario deberá cambiarla al ingresar, y sus sesiones abiertas se cerrarán.
             </div>
             <label>Nueva contraseña</label>
             <PasswordField
@@ -624,10 +599,6 @@ export default function UsersPage() {
             <div>
               <span><IconMail width={14} height={14} /> Correo</span>
               <strong>{viewingUser.email || 'Sin correo'}</strong>
-            </div>
-            <div>
-              <span><IconPhone width={14} height={14} /> Teléfono</span>
-              <strong>{viewingUser.telefono || 'Sin teléfono'}</strong>
             </div>
             <div>
               <span><IconPower width={14} height={14} /> Estado</span>

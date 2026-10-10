@@ -5,11 +5,12 @@ import { PasswordField, PasswordStrengthMeter } from '../components/PasswordFiel
 import { useToast } from '../components/ToastProvider.jsx';
 import { IconKey, IconLogout, IconChevronDown, IconShield } from '../components/icons.jsx';
 import { changeMyPassword } from '../features/auth/services/auth.service.js';
+import { clearSession, saveSession } from '../features/auth/session.js';
 
 const roleLabels = {
   SUPER_ADMIN: 'Super Admin',
   ADMIN: 'Admin',
-  NORMAL: 'Tutor',
+  NORMAL: 'Normal',
 };
 
 const roleTones = {
@@ -48,10 +49,11 @@ function ChangePasswordModal({ onClose }) {
 
     setSaving(true);
     try {
-      await changeMyPassword({
+      // Al cambiar la contraseña las demás sesiones caducan: se guarda el token nuevo.
+      saveSession(await changeMyPassword({
         currentPassword: form.currentPassword,
         newPassword: form.newPassword,
-      });
+      }));
       toast.success('Contraseña actualizada correctamente.');
       setForm(emptyPasswordForm);
       onClose();
@@ -148,8 +150,7 @@ export default function UserMenu({ user }) {
   }, []);
 
   function logout() {
-    localStorage.removeItem('loto_numeros_token');
-    localStorage.removeItem('loto_numeros_user');
+    clearSession();
     navigate('/login');
   }
 

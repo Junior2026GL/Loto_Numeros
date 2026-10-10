@@ -2,7 +2,7 @@ import { db } from '../../infrastructure/database/mysql.js';
 
 export async function listUsers() {
   const [rows] = await db.query(
-    `SELECT u.id, u.nombre, u.usuario, u.email, u.telefono, u.activo, u.rol_id, r.nombre AS rol,
+    `SELECT u.id, u.nombre, u.usuario, u.email, u.activo, u.debe_cambiar_password, u.rol_id, r.nombre AS rol,
             u.ultimo_acceso_at, u.created_at
      FROM usuarios u
      LEFT JOIN roles r ON r.id = u.rol_id
@@ -13,7 +13,7 @@ export async function listUsers() {
 
 export async function findUserById(id) {
   const [rows] = await db.query(
-    `SELECT u.id, u.nombre, u.usuario, u.email, u.telefono, u.activo, u.rol_id, r.nombre AS rol,
+    `SELECT u.id, u.nombre, u.usuario, u.email, u.activo, u.debe_cambiar_password, u.rol_id, r.nombre AS rol,
             u.ultimo_acceso_at, u.created_at
      FROM usuarios u
      LEFT JOIN roles r ON r.id = u.rol_id
@@ -34,24 +34,28 @@ export async function listRoles() {
   return rows;
 }
 
-export async function createUser({ nombre, usuario, email, telefono, passwordHash, rolId }) {
+export async function createUser({ nombre, usuario, email, passwordHash, rolId }) {
   const [result] = await db.query(
-    `INSERT INTO usuarios (nombre, usuario, email, telefono, password_hash, rol_id, activo)
-     VALUES (?, ?, ?, ?, ?, ?, 1)`,
-    [nombre, usuario, email || null, telefono || null, passwordHash, rolId]
+    `INSERT INTO usuarios (nombre, usuario, email, password_hash, rol_id, activo, debe_cambiar_password)
+     VALUES (?, ?, ?, ?, ?, 1, 1)`,
+    [nombre, usuario, email || null, passwordHash, rolId]
   );
   return result.insertId;
 }
 
-export async function updateUser(id, { nombre, usuario, email, telefono, rolId }) {
+export async function updateUser(id, { nombre, usuario, email, rolId }) {
   await db.query(
-    `UPDATE usuarios SET nombre = ?, usuario = ?, email = ?, telefono = ?, rol_id = ? WHERE id = ?`,
-    [nombre, usuario, email || null, telefono || null, rolId, id]
+    `UPDATE usuarios SET nombre = ?, usuario = ?, email = ?, rol_id = ? WHERE id = ?`,
+    [nombre, usuario, email || null, rolId, id]
   );
 }
 
 export async function updatePassword(id, passwordHash) {
-  await db.query('UPDATE usuarios SET password_hash = ? WHERE id = ?', [passwordHash, id]);
+  // Un admin define una contraseña temporal: el usuario debe cambiarla y sus sesiones anteriores caducan.
+  await db.query(
+    'UPDATE usuarios SET password_hash = ?, debe_cambiar_password = 1, version_sesion = version_sesion + 1 WHERE id = ?',
+    [passwordHash, id]
+  );
 }
 
 export async function setActive(id, activo) {

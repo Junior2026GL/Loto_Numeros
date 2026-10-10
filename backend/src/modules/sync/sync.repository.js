@@ -22,6 +22,16 @@ export async function deleteRun(id) {
   await db.query('DELETE FROM sincronizaciones WHERE id = ?', [id]);
 }
 
+/** La ejecución más reciente (para avisar en el dashboard si falló). */
+export async function lastRun(juegoId) {
+  const [rows] = await db.query(
+    `SELECT id, origen, estado, errores, insertados, detalle, iniciada_at, finalizada_at
+     FROM sincronizaciones WHERE juego_id = ? ORDER BY id DESC LIMIT 1`,
+    [juegoId]
+  );
+  return rows[0] || null;
+}
+
 export async function listRuns({ juegoId, page, pageSize }) {
   const limit = Math.max(1, Math.min(50, Number(pageSize) || 10));
   const offset = Math.max(0, (Number(page) || 1) - 1) * limit;

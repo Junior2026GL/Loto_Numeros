@@ -10,16 +10,13 @@ import {
 } from '../../shared/utils/dates.js';
 import { fetchDrawResult } from '../../infrastructure/lotto/lotohn.client.js';
 import * as draws from '../draws/draws.repository.js';
+import { FIRST_DRAW_DATE, isPublished, missingDraws } from '../draws/draws.service.js';
 import * as repository from './sync.repository.js';
 import { env } from '../../config/env.js';
 
 const MAX_RANGE_DAYS = 400;
 const REQUEST_DELAY_MS = 200;
 const MAX_CONSECUTIVE_ERRORS = 5;
-// Minutos después de la hora del sorteo en que ya se espera que el resultado esté publicado.
-const PUBLISH_GRACE_MINUTES = 15;
-// Fecha desde la que se empieza a buscar cuando todavía no hay ningún sorteo guardado.
-const FIRST_DRAW_DATE = '2026-01-01';
 
 let running = false;
 
@@ -39,14 +36,6 @@ function validateRange(desde, hasta) {
   if (diffDays(desde, hasta) > MAX_RANGE_DAYS) {
     throw new AppError(`El rango no puede superar ${MAX_RANGE_DAYS} días`);
   }
-}
-
-/** Hoy aún no cuenta como pendiente si el resultado todavía no se espera publicado. */
-function isPublishedByNow(fecha, game) {
-  if (fecha !== todayInHonduras()) return true;
-  const [hh, mm] = game.hora_sorteo.split(':').map(Number);
-  const now = nowInHonduras();
-  return now.getUTCHours() * 60 + now.getUTCMinutes() >= hh * 60 + mm + PUBLISH_GRACE_MINUTES;
 }
 
 function checkNumbers(numeros, game) {
@@ -76,7 +65,7 @@ export async function run({ desde, hasta, usuarioId = null, origen = 'MANUAL' })
     const game = await getGame();
     const fechas = drawDatesBetween(desde, hastaEfectivo, game.dias);
     const existentes = new Set(await draws.listDrawDates(game.id, desde, hastaEfectivo));
-    const pendientes = fechas.filter((f) => !existentes.has(f) && isPublishedByNow(f, game));
+    const pendientes = fechas.filter((f) => !existentes.has(f) && isPublished(f, game));
 
     runId = await repository.createRun({
       juegoId: game.id,
@@ -170,17 +159,21 @@ export async function runPending({ usuarioId = null, origen = 'MANUAL' } = {}) {
 }
 
 export async function status() {
-  const game = await getGame();
-  const last = await draws.findLastDrawDate(game.id);
-  const hoy = todayInHonduras();
-  const desde = last ? addDays(last, 1) : FIRST_DRAW_DATE;
+  const [missing, lastRun] = await Promise.all([missingDraws(), repository.lastRun(await getGameId())]);
+  const hoy = missing.hasta;
 
   return {
-    ultimoSorteo: last,
-    sugerido: { desde: desde > hoy ? hoy : desde, hasta: hoy },
+    ultimoSorteo: missing.ultimoSorteo,
+    sugerido: { desde: missing.desde > hoy ? hoy : missing.desde, hasta: hoy },
+    pendientes: missing.pendientes,
+    ultimaEjecucion: lastRun,
     autoSync: env.lotto.autoSync,
     ejecutando: running,
   };
+}
+
+async function getGameId() {
+  return (await getGame()).id;
 }
 
 export async function history(query) {

@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { login } from '../services/auth.service.js';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { getAuthOptions, login } from '../services/auth.service.js';
+import { saveSession } from '../session.js';
 import { PasswordField } from '../../../components/PasswordField.jsx';
 import { IconUser, IconArrowRight, IconAlert } from '../../../components/icons.jsx';
 
@@ -9,6 +10,11 @@ export default function LoginPage() {
   const [form, setForm] = useState({ usuario: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [canRecover, setCanRecover] = useState(false);
+
+  useEffect(() => {
+    getAuthOptions().then((o) => setCanRecover(o.recuperacionPorCorreo)).catch(() => {});
+  }, []);
 
   async function submit(e) {
     e.preventDefault();
@@ -17,9 +23,8 @@ export default function LoginPage() {
 
     try {
       const data = await login(form);
-      localStorage.setItem('loto_numeros_token', data.token);
-      localStorage.setItem('loto_numeros_user', JSON.stringify(data.user));
-      navigate('/');
+      saveSession(data);
+      navigate(data.user.debeCambiarPassword ? '/cambiar-password' : '/', { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || 'No se pudo iniciar sesión');
     } finally {
@@ -70,7 +75,9 @@ export default function LoginPage() {
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 autoComplete="current-password"
                 minLength={0}
-              />            </div>
+              />
+              {canRecover && <Link to="/forgot-password" className="login-inline-link">¿Olvidaste tu contraseña?</Link>}
+            </div>
 
             <button className="btn-primary" disabled={loading}>
               {loading ? 'Ingresando...' : 'Ingresar'} <IconArrowRight />

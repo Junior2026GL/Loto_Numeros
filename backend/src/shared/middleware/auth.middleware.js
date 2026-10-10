@@ -20,15 +20,36 @@ export async function authRequired(req, res, next) {
     // El token solo identifica al usuario: su estado y su rol se leen siempre de la base de datos,
     // así un usuario desactivado o con otro rol pierde el acceso al instante y no al vencer el token.
     const user = await findUserById(payload.sub);
-    if (!user || !user.activo) {
+    // Los tokens sin versión (anteriores a esta medida) cuentan como versión 0.
+    const sessionStillValid = user && (payload.sv ?? 0) === user.version_sesion;
+
+    if (!user || !user.activo || !sessionStillValid) {
       return res.status(401).json({ ok: false, message: 'Sesión no válida. Inicia sesión de nuevo.' });
     }
 
-    req.user = { ...payload, usuario: user.usuario, nombre: user.nombre, rol: user.rol };
+    req.user = {
+      ...payload,
+      usuario: user.usuario,
+      nombre: user.nombre,
+      rol: user.rol,
+      debeCambiarPassword: Boolean(user.debe_cambiar_password),
+    };
     return next();
   } catch (error) {
     return next(error);
   }
+}
+
+/** Bloquea el resto de la API mientras el usuario no haya cambiado su contraseña temporal. */
+export function requirePasswordChanged(req, res, next) {
+  if (req.user?.debeCambiarPassword) {
+    return res.status(403).json({
+      ok: false,
+      code: 'PASSWORD_CHANGE_REQUIRED',
+      message: 'Debes cambiar tu contraseña antes de continuar.',
+    });
+  }
+  return next();
 }
 
 export function requireRole(...roles) {

@@ -32,8 +32,25 @@ export const env = {
     database: process.env.DB_NAME || 'loto_numeros',
   },
 
+  // Máximos de solicitudes por IP (ventanas fijas: API y login 15 min, recuperación 1 h).
+  rateLimit: {
+    api: Number(process.env.RATE_LIMIT_API || 600),
+    login: Number(process.env.RATE_LIMIT_LOGIN || 20),
+    recovery: Number(process.env.RATE_LIMIT_RECOVERY || 10),
+  },
+
   jwtSecret: process.env.JWT_SECRET || DEFAULT_JWT_SECRET,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '8h',
+
+  // Correo saliente (recuperación de contraseña). Sin SMTP_HOST la recuperación queda desactivada.
+  mail: {
+    host: process.env.SMTP_HOST || '',
+    port: Number(process.env.SMTP_PORT || 587),
+    secure: process.env.SMTP_SECURE === 'true',
+    user: process.env.SMTP_USER || '',
+    pass: process.env.SMTP_PASS || '',
+    from: process.env.SMTP_FROM || 'Loto Números <no-responder@localhost>',
+  },
 
   lotto: {
     baseUrl: process.env.LOTTO_API_URL || 'https://loto.hn/api/resultados_superpremio_por_fecha.php',
