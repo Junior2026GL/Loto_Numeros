@@ -101,7 +101,8 @@ export default function WheelPanel({ nextDraw, onSaved }) {
         <div className="panel">
           <div className="sync-result" style={{ marginTop: 0 }}>
             <div><strong>{wheel.totalBoletos}</strong><span>Boletos necesarios</span></div>
-            <div><strong>{formatMoney(wheel.costoTotal)}</strong><span>Costo total ({formatMoney(wheel.precioBoleto)} c/u)</span></div>
+            <div><strong>{formatMoney(wheel.costoTotal)}</strong><span>Costo total sencillo ({formatMoney(wheel.precioBoleto)} c/u)</span></div>
+            <div><strong>{formatMoney(wheel.costoTotalDoble)}</strong><span>Costo total doble ({formatMoney(wheel.precioDoble)} c/u)</span></div>
             <div><strong>{formatPercent(wheel.probabilidadActivacion)}</strong><span>Prob. de que se active la garantía</span></div>
           </div>
 
@@ -111,7 +112,7 @@ export default function WheelPanel({ nextDraw, onSaved }) {
               Esto <b>no aumenta la probabilidad</b> de que tus números salgan: solo reparte tu dinero en varios boletos.
               La garantía de {wheel.garantia} aciertos solo se activa si en el sorteo salen al menos {wheel.garantia} de tus
               {' '}{wheel.grupo.length} números, y eso ocurre con una probabilidad de {formatPercent(wheel.probabilidadActivacion)}.
-              Jugar los {wheel.totalBoletos} boletos cuesta {formatMoney(wheel.costoTotal)}.
+              Jugar los {wheel.totalBoletos} boletos cuesta {formatMoney(wheel.costoTotal)} en sencilla o {formatMoney(wheel.costoTotalDoble)} en doble.
             </span>
           </div>
 

@@ -32,7 +32,7 @@ export async function loadDraws({ juegoId, ultimos, dia }) {
 export async function loadConfig() {
   const [rows] = await db.query(
     `SELECT clave, valor FROM configuracion
-     WHERE clave IN ('ventana_calientes', 'peso_frecuencia', 'peso_atraso', 'peso_caliente', 'precio_boleto')`
+     WHERE clave IN ('ventana_calientes', 'peso_frecuencia', 'peso_atraso', 'peso_caliente', 'precio_boleto', 'precio_doble')`
   );
   return Object.fromEntries(rows.map((r) => [r.clave, r.valor]));
 }

@@ -36,7 +36,7 @@ test('configuración: solo el superadmin la ve y la edita, y valida los valores'
   assert.equal((await api.request('PUT', '/configuracion', { token: tokens.NORMAL, body: {} })).status, 403);
 
   const current = await api.request('GET', '/configuracion', { token: tokens.SUPER_ADMIN });
-  assert.deepEqual(current.data, { ventanaCalientes: 5, pesos: { frecuencia: 50, atraso: 35, caliente: 15 }, precioBoleto: 20 });
+  assert.deepEqual(current.data, { ventanaCalientes: 5, pesos: { frecuencia: 50, atraso: 35, caliente: 15 }, precioBoleto: 10, precioDoble: 20 });
 
   const put = (body) => api.request('PUT', '/configuracion', { token: tokens.SUPER_ADMIN, body });
   assert.equal((await put({ ventanaCalientes: 0, pesos: { frecuencia: 1, atraso: 1, caliente: 1 } })).status, 400);

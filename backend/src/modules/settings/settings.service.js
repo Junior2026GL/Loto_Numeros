@@ -3,7 +3,7 @@ import { AppError } from '../../shared/errors/AppError.js';
 import { db } from '../../infrastructure/database/mysql.js';
 import { loadConfig } from '../stats/stats.repository.js';
 
-const DEFAULTS = { ventanaCalientes: 5, pesos: { frecuencia: 50, atraso: 35, caliente: 15 }, precioBoleto: 20 };
+const DEFAULTS = { ventanaCalientes: 5, pesos: { frecuencia: 50, atraso: 35, caliente: 15 }, precioBoleto: 10, precioDoble: 20 };
 
 const weight = z.coerce.number({ invalid_type_error: 'Los pesos deben ser números' })
   .int('Los pesos deben ser números enteros')
@@ -21,6 +21,10 @@ const schema = z.object({
     .min(0, 'El precio del boleto no puede ser negativo')
     .max(100000, 'El precio del boleto es demasiado alto')
     .optional(),
+  precioDoble: z.coerce.number({ invalid_type_error: 'El precio de la jugada doble debe ser un número' })
+    .min(0, 'El precio de la jugada doble no puede ser negativo')
+    .max(100000, 'El precio de la jugada doble es demasiado alto')
+    .optional(),
 });
 
 const toNumber = (value, fallback) => (Number.isFinite(Number(value)) && value !== undefined ? Number(value) : fallback);
@@ -35,6 +39,7 @@ export async function get() {
       caliente: toNumber(raw.peso_caliente, DEFAULTS.pesos.caliente),
     },
     precioBoleto: toNumber(raw.precio_boleto, DEFAULTS.precioBoleto),
+    precioDoble: toNumber(raw.precio_doble, DEFAULTS.precioDoble),
   };
 }
 
@@ -42,7 +47,7 @@ export async function update(payload) {
   const parsed = schema.safeParse(payload);
   if (!parsed.success) throw new AppError(parsed.error.issues[0]?.message || 'Datos inválidos');
 
-  const { ventanaCalientes, pesos, precioBoleto } = parsed.data;
+  const { ventanaCalientes, pesos, precioBoleto, precioDoble } = parsed.data;
   if (pesos.frecuencia + pesos.atraso + pesos.caliente === 0) {
     throw new AppError('Al menos uno de los pesos debe ser mayor que 0');
   }
@@ -54,6 +59,7 @@ export async function update(payload) {
     ['peso_caliente', pesos.caliente],
   ];
   if (precioBoleto !== undefined) rows.push(['precio_boleto', Math.round(precioBoleto * 100) / 100]);
+  if (precioDoble !== undefined) rows.push(['precio_doble', Math.round(precioDoble * 100) / 100]);
 
   await db.query(
     'INSERT INTO configuracion (clave, valor) VALUES ? ON DUPLICATE KEY UPDATE valor = VALUES(valor)',

@@ -32,9 +32,13 @@ async function getGame() {
   return { ...game, dias: game.dias_sorteo.split(',').map(Number) };
 }
 
-async function getTicketPrice() {
-  const value = Number((await statsRepository.loadConfig()).precio_boleto);
-  return Number.isFinite(value) && value >= 0 ? value : 20;
+const MODALITIES = ['SENCILLA', 'DOBLE'];
+
+/** Precios de la jugada sencilla y de la doble (se pueden cambiar en Configuración). */
+async function getPrices() {
+  const config = await statsRepository.loadConfig();
+  const read = (raw, fallback) => (Number.isFinite(Number(raw)) && Number(raw) >= 0 && raw !== undefined ? Number(raw) : fallback);
+  return { SENCILLA: read(config.precio_boleto, 10), DOBLE: read(config.precio_doble, 20) };
 }
 
 /** Valida una lista de números contra el rango del juego: enteros, sin repetir y dentro del rango. */
@@ -98,10 +102,11 @@ export async function generate(body = {}) {
   };
 }
 
-/** Probabilidades de cada premio y precio de un boleto. */
+/** Probabilidades de cada premio y precios de la jugada sencilla y la doble. */
 export async function odds() {
   const game = await getGame();
-  return { ...prizeOdds(game), precioBoleto: await getTicketPrice() };
+  const prices = await getPrices();
+  return { ...prizeOdds(game), precioBoleto: prices.SENCILLA, precioDoble: prices.DOBLE };
 }
 
 /** Arma un sistema de cobertura a partir de un grupo de números. */
@@ -118,8 +123,14 @@ export async function wheel(body = {}) {
     throw new AppError(error.message);
   }
 
-  const precio = await getTicketPrice();
-  return { ...result, precioBoleto: precio, costoTotal: round2(result.totalBoletos * precio) };
+  const prices = await getPrices();
+  return {
+    ...result,
+    precioBoleto: prices.SENCILLA,
+    precioDoble: prices.DOBLE,
+    costoTotal: round2(result.totalBoletos * prices.SENCILLA),
+    costoTotalDoble: round2(result.totalBoletos * prices.DOBLE),
+  };
 }
 
 /** ¿Cómo le habría ido a una combinación en los últimos sorteos? */
@@ -216,7 +227,7 @@ function monthBounds(fecha) {
 /** Resumen de lo gastado y ganado: este mes y en total. */
 export async function budget(usuarioId) {
   const game = await getGame();
-  const [precioBoleto, limiteMensual] = await Promise.all([getTicketPrice(), repository.getMonthlyLimit(usuarioId)]);
+  const [prices, limiteMensual] = await Promise.all([getPrices(), repository.getMonthlyLimit(usuarioId)]);
   const [mes, total] = await Promise.all([
     repository.spending(usuarioId, game.id, monthBounds(todayInHonduras())),
     repository.spending(usuarioId, game.id),
@@ -224,7 +235,8 @@ export async function budget(usuarioId) {
 
   const withBalance = (s) => ({ ...s, gastado: round2(s.gastado), ganado: round2(s.ganado), saldo: round2(s.ganado - s.gastado) });
   return {
-    precioBoleto,
+    precioBoleto: prices.SENCILLA,
+    precioDoble: prices.DOBLE,
     limiteMensual,
     mes: { ...withBalance(mes), restante: limiteMensual === null ? null : round2(limiteMensual - mes.gastado) },
     total: withBalance(total),
@@ -242,35 +254,45 @@ export async function setLimit(usuarioId, value) {
   return budget(usuarioId);
 }
 
-export async function setPlayed(id, jugada, usuarioId, confirmar = false) {
+/**
+ * Marca (o desmarca) una combinación como jugada. Al jugarla se guarda lo que costó según la modalidad:
+ * sencilla o doble. Si ya estaba jugada y cambia de modalidad, solo se cobra la diferencia al revisar el límite.
+ */
+export async function setPlayed(id, jugada, usuarioId, confirmar = false, modalidad = 'SENCILLA') {
   const combo = await repository.findOwned(id, usuarioId);
   if (!combo) throw new AppError('Combinación no encontrada', 404);
 
-  const play = Boolean(jugada);
-  if (!play) {
+  if (!jugada) {
     await repository.setPlayed(id, usuarioId, false);
     return repository.findOwned(id, usuarioId);
   }
-  if (combo.jugada) return combo; // ya estaba jugada: no se vuelve a cobrar
+
+  if (!MODALITIES.includes(modalidad)) throw new AppError('La modalidad debe ser SENCILLA o DOBLE');
+  const prices = await getPrices();
+  const precio = prices[modalidad];
+
+  // Lo que ya se cobró por esta combinación (0 si aún no estaba jugada): el límite solo mira el aumento.
+  const previous = combo.jugada ? combo.costo || 0 : 0;
+  const increase = precio - previous;
+  if (combo.jugada && combo.modalidad === modalidad) return combo; // nada que cambiar: no se vuelve a cobrar
 
   const game = await getGame();
-  const precio = await getTicketPrice();
   const limite = await repository.getMonthlyLimit(usuarioId);
 
   // Límite mensual (responsabilidad al jugar): se avisa antes de pasarse y hay que confirmar.
-  if (limite !== null && !confirmar) {
+  if (limite !== null && !confirmar && increase > 0) {
     const mes = await repository.spending(usuarioId, game.id, monthBounds(combo.fecha_sorteo_objetivo || todayInHonduras()));
-    if (mes.gastado + precio > limite) {
+    if (mes.gastado + increase > limite) {
       throw new AppError('Con esta combinación superarías tu límite mensual de gasto.', 409, {
         code: 'LIMIT_EXCEEDED',
         gastado: round2(mes.gastado),
         limite,
-        costo: precio,
+        costo: round2(increase),
       });
     }
   }
 
-  await repository.setPlayed(id, usuarioId, true, precio);
+  await repository.setPlayed(id, usuarioId, true, precio, modalidad);
   return repository.findOwned(id, usuarioId);
 }
 
@@ -338,6 +360,7 @@ export async function exportCsv(usuarioId) {
     { header: 'Resultado', value: (c) => join(results.get(c.fecha_sorteo_objetivo)) },
     { header: 'Aciertos', value: (c) => c.aciertos },
     { header: 'Jugada', value: (c) => (c.jugada ? 'Sí' : 'No') },
+    { header: 'Modalidad', value: (c) => (c.jugada ? (c.modalidad === 'DOBLE' ? 'Doble' : 'Sencilla') : '') },
     { header: 'Costo', value: (c) => c.costo },
     { header: 'Premio', value: (c) => c.premio },
   ]);

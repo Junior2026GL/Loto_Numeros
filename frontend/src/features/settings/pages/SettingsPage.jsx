@@ -64,22 +64,36 @@ export default function SettingsPage() {
           </div>
 
           <h3 className="panel-title" style={{ marginTop: 26 }}>Precio del boleto</h3>
-          <div className="settings-field">
-            <label>Lo que cuesta jugar una combinación (L)</label>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              inputMode="decimal"
-              value={form.precioBoleto ?? ''}
-              onChange={(e) => setForm({ ...form, precioBoleto: e.target.value })}
-              required
-            />
-            <p className="auth-hint">
-              Se usa para calcular el gasto de cada usuario en Combinaciones y el costo de los sistemas de cobertura.
-              Pon el precio real del boleto.
-            </p>
+          <div className="settings-weights">
+            <div className="settings-field">
+              <label>Jugada sencilla (L)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                inputMode="decimal"
+                value={form.precioBoleto ?? ''}
+                onChange={(e) => setForm({ ...form, precioBoleto: e.target.value })}
+                required
+              />
+            </div>
+            <div className="settings-field">
+              <label>Jugada doble (L)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                inputMode="decimal"
+                value={form.precioDoble ?? ''}
+                onChange={(e) => setForm({ ...form, precioDoble: e.target.value })}
+                required
+              />
+            </div>
           </div>
+          <p className="auth-hint">
+            Se usan para calcular el gasto de cada usuario en Combinaciones y el costo de los sistemas de cobertura.
+            Pon los precios reales.
+          </p>
 
           <h3 className="panel-title" style={{ marginTop: 26 }}>Puntaje de cada número</h3>
           <p className="panel-note">

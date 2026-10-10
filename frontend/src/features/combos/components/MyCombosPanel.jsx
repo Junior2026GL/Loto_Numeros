@@ -8,6 +8,7 @@ import { IconChart, IconDownload, IconSave, IconTrash } from '../../../component
 import SimulateModal from './SimulateModal.jsx';
 import {
   deleteCombination,
+  getBudget,
   listCombinations,
   setCombinationPlayed,
   setCombinationPrize,
@@ -38,10 +39,11 @@ export default function MyCombosPanel({ reload, onChanged }) {
   const [error, setError] = useState('');
   const [toDelete, setToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
-  const [limitAsk, setLimitAsk] = useState(null); // { combo, details }
+  const [limitAsk, setLimitAsk] = useState(null); // { combo, modalidad, details }
   const [prizeFor, setPrizeFor] = useState(null);
   const [prizeValue, setPrizeValue] = useState('');
   const [simulating, setSimulating] = useState(null);
+  const [prices, setPrices] = useState({ precioBoleto: null, precioDoble: null });
 
   useEffect(() => {
     listCombinations({ page, pageSize: PAGE_SIZE })
@@ -49,14 +51,19 @@ export default function MyCombosPanel({ reload, onChanged }) {
       .catch((err) => setError(err.response?.data?.message || 'No se pudieron cargar tus combinaciones'));
   }, [page, reload]);
 
-  async function play(combo, confirmar = false) {
+  useEffect(() => {
+    getBudget().then((b) => setPrices({ precioBoleto: b.precioBoleto, precioDoble: b.precioDoble })).catch(() => {});
+  }, []);
+
+  /** `choice` es 'NO', 'SENCILLA' o 'DOBLE'. */
+  async function play(combo, choice, confirmar = false) {
     try {
-      await setCombinationPlayed(combo.id, !combo.jugada, confirmar);
+      await setCombinationPlayed(combo.id, choice !== 'NO', confirmar, choice === 'DOBLE' ? 'DOBLE' : 'SENCILLA');
       onChanged();
     } catch (err) {
       const details = err.response?.data?.details;
       if (err.response?.status === 409 && details?.code === 'LIMIT_EXCEEDED') {
-        setLimitAsk({ combo, details });
+        setLimitAsk({ combo, choice, details });
       } else {
         toast.error(err.response?.data?.message || 'No se pudo actualizar la combinación');
       }
@@ -137,15 +144,21 @@ export default function MyCombosPanel({ reload, onChanged }) {
                       : <strong>{combo.aciertos} de {combo.numeros.length}</strong>}
                   </td>
                   <td>
-                    <label className="switch-row">
-                      <input type="checkbox" checked={combo.jugada} onChange={() => play(combo)} />
-                      <span>{combo.jugada ? 'Sí' : 'No'}</span>
-                    </label>
+                    <select
+                      className="play-select"
+                      value={combo.jugada ? combo.modalidad : 'NO'}
+                      onChange={(e) => play(combo, e.target.value)}
+                      aria-label="¿Cómo la jugaste?"
+                    >
+                      <option value="NO">No jugada</option>
+                      <option value="SENCILLA">Sencilla{prices.precioBoleto !== null ? ` (${formatMoney(prices.precioBoleto)})` : ''}</option>
+                      <option value="DOBLE">Doble{prices.precioDoble !== null ? ` (${formatMoney(prices.precioDoble)})` : ''}</option>
+                    </select>
                   </td>
                   <td>
                     {combo.jugada ? (
                       <div className="money-cell">
-                        <span>Costo {formatMoney(combo.costo)}</span>
+                        <span>Costo {formatMoney(combo.costo)}{combo.modalidad === 'DOBLE' ? ' · doble' : ''}</span>
                         <button
                           type="button"
                           className="btn-link"
@@ -187,10 +200,10 @@ export default function MyCombosPanel({ reload, onChanged }) {
       {limitAsk && (
         <ConfirmDialog
           title="Superarías tu límite mensual"
-          message={`Llevas ${formatMoney(limitAsk.details.gastado)} de tu límite de ${formatMoney(limitAsk.details.limite)} este mes, y esta combinación cuesta ${formatMoney(limitAsk.details.costo)}. ¿Quieres jugarla de todos modos?`}
+          message={`Llevas ${formatMoney(limitAsk.details.gastado)} de tu límite de ${formatMoney(limitAsk.details.limite)} este mes, y esto sumaría ${formatMoney(limitAsk.details.costo)} más. ¿Quieres jugarla de todos modos?`}
           confirmLabel="Jugarla de todos modos"
           danger
-          onConfirm={() => { const { combo } = limitAsk; setLimitAsk(null); play(combo, true); }}
+          onConfirm={() => { const { combo, choice } = limitAsk; setLimitAsk(null); play(combo, choice, true); }}
           onCancel={() => setLimitAsk(null)}
         />
       )}

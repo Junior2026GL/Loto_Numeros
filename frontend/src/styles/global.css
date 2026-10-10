@@ -1528,3 +1528,5 @@ tbody tr:last-child td { border-bottom: 0; }
   .nav-link.active::before { display: none; }
   .topbar { padding-left: 16px; padding-right: 16px; }
 }
+
+.play-select { width: auto; min-width: 150px; padding: 7px 10px; font-size: 13px; }

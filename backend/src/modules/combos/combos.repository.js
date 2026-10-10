@@ -1,6 +1,6 @@
 import { db } from '../../infrastructure/database/mysql.js';
 
-const COLUMNS = `id, estrategia, numeros, fecha_sorteo_objetivo, jugada, costo, premio, aciertos, evaluada_at, created_at`;
+const COLUMNS = `id, estrategia, numeros, fecha_sorteo_objetivo, jugada, modalidad, costo, premio, aciertos, evaluada_at, created_at`;
 
 const toDateString = (value) => (value ? String(value).slice(0, 10) : null);
 
@@ -58,12 +58,12 @@ export async function listCombinations({ usuarioId, juegoId, page, pageSize, max
 }
 
 /** Marca como jugada (guardando lo que costó) o la desmarca (y borra costo y premio). */
-export async function setPlayed(id, usuarioId, jugada, costo = null) {
+export async function setPlayed(id, usuarioId, jugada, costo = null, modalidad = 'SENCILLA') {
   await db.query(
     jugada
-      ? 'UPDATE combinaciones SET jugada = 1, costo = ? WHERE id = ? AND usuario_id = ?'
-      : 'UPDATE combinaciones SET jugada = 0, costo = NULL, premio = NULL WHERE id = ? AND usuario_id = ?',
-    jugada ? [costo, id, usuarioId] : [id, usuarioId]
+      ? 'UPDATE combinaciones SET jugada = 1, modalidad = ?, costo = ? WHERE id = ? AND usuario_id = ?'
+      : "UPDATE combinaciones SET jugada = 0, modalidad = 'SENCILLA', costo = NULL, premio = NULL WHERE id = ? AND usuario_id = ?",
+    jugada ? [modalidad, costo, id, usuarioId] : [id, usuarioId]
   );
 }
 

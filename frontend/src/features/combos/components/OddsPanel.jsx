@@ -19,7 +19,7 @@ export default function OddsPanel() {
       <p className="panel-note">
         Con una combinación hay <b>{odds.combinacionesPosibles.toLocaleString('en-US')}</b> resultados posibles, y todos tienen
         la misma probabilidad. Por azar se esperan <b>{odds.aciertosEsperados}</b> aciertos por combinación.
-        Un boleto cuesta {formatMoney(odds.precioBoleto)}.
+        La jugada sencilla cuesta {formatMoney(odds.precioBoleto)} y la doble {formatMoney(odds.precioDoble)}.
       </p>
 
       <table>

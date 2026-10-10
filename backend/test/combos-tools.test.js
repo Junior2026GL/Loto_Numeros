@@ -77,7 +77,8 @@ test('probabilidades: tabla exacta y precio del boleto', async () => {
   assert.equal(res.data.filas.length, 7);
   assert.equal(res.data.filas[0].aciertos, 6);
   assert.equal(res.data.filas[0].unoEn, 1107568);
-  assert.equal(res.data.precioBoleto, 20);
+  assert.equal(res.data.precioBoleto, 10);
+  assert.equal(res.data.precioDoble, 20);
   assert.equal((await api.request('GET', '/combinaciones/probabilidades', {})).status, 401);
 });
 
@@ -85,7 +86,8 @@ test('cobertura: arma boletos, calcula el costo y valida el grupo', async () => 
   const ok = await post('/combinaciones/cobertura', tokens.UNO, { grupo: [3, 8, 12, 15, 20, 25, 27, 31, 33], garantia: 3 });
   assert.equal(ok.status, 200);
   assert.ok(ok.data.totalBoletos >= 5);
-  assert.equal(ok.data.costoTotal, ok.data.totalBoletos * 20);
+  assert.equal(ok.data.costoTotal, ok.data.totalBoletos * 10);
+  assert.equal(ok.data.costoTotalDoble, ok.data.totalBoletos * 20);
   assert.ok(ok.data.probabilidadActivacion > 0 && ok.data.probabilidadActivacion < 1);
   for (const ticket of ok.data.combinaciones) assert.equal(ticket.length, 6);
 
@@ -109,7 +111,7 @@ test('simular: cuenta los aciertos que habría tenido una combinación', async (
   assert.equal((await post('/combinaciones/simular', tokens.UNO, { numeros: [1, 2, 3] })).status, 400);
 });
 
-test('presupuesto: costo al jugar, límite mensual con confirmación, premios y privacidad', async () => {
+test('presupuesto: jugada sencilla y doble, límite mensual con confirmación, premios y privacidad', async () => {
   const next = (await post('/combinaciones/generar', tokens.UNO, {})).data.proximoSorteo;
   const save = async (numeros) => (await post('/combinaciones', tokens.UNO, { estrategia: 'MANUAL', numeros, fecha: next.fecha })).data;
   const a = await save([1, 5, 9, 14, 22, 30]);
@@ -117,35 +119,56 @@ test('presupuesto: costo al jugar, límite mensual con confirmación, premios y 
   const c = await save([3, 7, 11, 16, 24, 32]);
 
   const initial = (await api.request('GET', '/combinaciones/presupuesto', { token: tokens.UNO })).data;
-  assert.equal(initial.precioBoleto, 20);
+  assert.equal(initial.precioBoleto, 10);
+  assert.equal(initial.precioDoble, 20);
   assert.equal(initial.limiteMensual, null);
   assert.equal(initial.total.gastado, 0);
 
   const played = (id, body = { jugada: true }) => api.request('PATCH', `/combinaciones/${id}/jugada`, { token: tokens.UNO, body });
-  assert.equal((await played(a.id)).data.costo, 20);
-  assert.equal((await played(b.id)).data.costo, 20);
-  assert.equal((await played(b.id)).data.costo, 20, 'marcar dos veces no cobra dos veces');
+  const budgetNow = async () => (await api.request('GET', '/combinaciones/presupuesto', { token: tokens.UNO })).data;
 
-  let budget = (await api.request('GET', '/combinaciones/presupuesto', { token: tokens.UNO })).data;
-  assert.equal(budget.total.gastado, 40);
+  const first = await played(a.id);
+  assert.equal(first.data.costo, 10);
+  assert.equal(first.data.modalidad, 'SENCILLA');
+  const double = await played(b.id, { jugada: true, modalidad: 'DOBLE' });
+  assert.equal(double.data.costo, 20);
+  assert.equal(double.data.modalidad, 'DOBLE');
+  assert.equal((await played(b.id, { jugada: true, modalidad: 'DOBLE' })).data.costo, 20, 'marcar dos veces no cobra dos veces');
+  assert.equal((await played(c.id, { jugada: true, modalidad: 'TRIPLE' })).status, 400);
+
+  let budget = await budgetNow();
+  assert.equal(budget.total.gastado, 30);
   assert.equal(budget.total.jugadas, 2);
-  assert.equal(budget.total.saldo, -40);
+  assert.equal(budget.total.saldo, -30);
 
-  // Límite mensual: el siguiente boleto lo superaría y pide confirmación.
+  // Cambiar de modalidad ajusta el costo en vez de sumarlo.
+  assert.equal((await played(b.id, { jugada: true, modalidad: 'SENCILLA' })).data.costo, 10);
+  assert.equal((await budgetNow()).total.gastado, 20);
+  assert.equal((await played(b.id, { jugada: true, modalidad: 'DOBLE' })).data.costo, 20);
+  assert.equal((await budgetNow()).total.gastado, 30);
+
+  // Límite mensual: la siguiente jugada lo superaría y pide confirmación.
   const setLimit = (value) => api.request('PUT', '/combinaciones/presupuesto', { token: tokens.UNO, body: { limiteMensual: value } });
   assert.equal((await setLimit(-5)).status, 400);
   assert.equal((await setLimit('abc')).status, 400);
-  assert.equal((await setLimit(50)).data.limiteMensual, 50);
+  assert.equal((await setLimit(35)).data.limiteMensual, 35);
 
   const blocked = await played(c.id);
   assert.equal(blocked.status, 409);
   assert.equal(blocked.details.code, 'LIMIT_EXCEEDED');
-  assert.equal(blocked.details.limite, 50);
-  assert.equal(blocked.details.gastado, 40);
+  assert.equal(blocked.details.limite, 35);
+  assert.equal(blocked.details.gastado, 30);
+  assert.equal(blocked.details.costo, 10);
 
   const confirmed = await played(c.id, { jugada: true, confirmar: true });
   assert.equal(confirmed.status, 200);
-  assert.equal(confirmed.data.costo, 20);
+  assert.equal(confirmed.data.costo, 10);
+
+  // Pasar a doble una combinación ya jugada: el límite solo mira lo que aumenta.
+  const upgrade = await played(a.id, { jugada: true, modalidad: 'DOBLE' });
+  assert.equal(upgrade.status, 409);
+  assert.equal(upgrade.details.costo, 10, 'solo cuenta la diferencia (20 - 10)');
+  assert.equal((await played(a.id, { jugada: true, modalidad: 'DOBLE', confirmar: true })).data.costo, 20);
 
   // Premios: solo sobre combinaciones jugadas.
   const prize = (id, premio) => api.request('PATCH', `/combinaciones/${id}/premio`, { token: tokens.UNO, body: { premio } });
@@ -153,15 +176,16 @@ test('presupuesto: costo al jugar, límite mensual con confirmación, premios y 
   assert.equal((await prize(a.id, -1)).status, 400);
   assert.equal((await prize(a.id, 'x')).status, 400);
 
-  budget = (await api.request('GET', '/combinaciones/presupuesto', { token: tokens.UNO })).data;
-  assert.equal(budget.total.gastado, 60);
+  budget = await budgetNow();
+  assert.equal(budget.total.gastado, 50);
   assert.equal(budget.total.ganado, 150);
-  assert.equal(budget.total.saldo, 90);
+  assert.equal(budget.total.saldo, 100);
 
-  // Desmarcar borra el costo y el premio.
+  // Desmarcar borra el costo, la modalidad y el premio.
   const unplayed = await played(a.id, { jugada: false });
   assert.equal(unplayed.data.costo, null);
   assert.equal(unplayed.data.premio, null);
+  assert.equal(unplayed.data.modalidad, 'SENCILLA');
   assert.equal((await prize(a.id, 10)).status, 400, 'sin jugar no se registra premio');
 
   // El otro usuario no ve ni toca nada de esto.
@@ -173,40 +197,51 @@ test('presupuesto: costo al jugar, límite mensual con confirmación, premios y 
   // El límite se puede quitar.
   assert.equal((await setLimit(null)).data.limiteMensual, null);
 
-  // El mes actual solo suma lo que corresponde a este mes.
-  budget = (await api.request('GET', '/combinaciones/presupuesto', { token: tokens.UNO })).data;
+  // El mes actual solo suma lo que corresponde a este mes (b doble 20 + c sencilla 10).
+  budget = await budgetNow();
   const sameMonth = next.fecha.slice(0, 7) === todayInHonduras().slice(0, 7);
-  assert.equal(budget.mes.gastado, sameMonth ? 40 : 0);
+  assert.equal(budget.mes.gastado, sameMonth ? 30 : 0);
 });
 
-test('el precio del boleto lo fija el superadmin y se usa al jugar', async () => {
+test('los precios los fija el superadmin y se usan al jugar', async () => {
   const settings = (await api.request('GET', '/configuracion', { token: tokens.SUPER_ADMIN })).data;
-  assert.equal(settings.precioBoleto, 20);
+  assert.equal(settings.precioBoleto, 10);
+  assert.equal(settings.precioDoble, 20);
 
-  const put = (precioBoleto) => api.request('PUT', '/configuracion', {
+  const put = (precioBoleto, precioDoble) => api.request('PUT', '/configuracion', {
     token: tokens.SUPER_ADMIN,
-    body: { ventanaCalientes: settings.ventanaCalientes, pesos: settings.pesos, precioBoleto },
+    body: { ventanaCalientes: settings.ventanaCalientes, pesos: settings.pesos, precioBoleto, precioDoble },
   });
-  assert.equal((await put(-1)).status, 400);
-  assert.equal((await put('abc')).status, 400);
-  assert.equal((await put(35.5)).data.precioBoleto, 35.5);
-  assert.equal((await api.request('GET', '/combinaciones/probabilidades', { token: tokens.DOS })).data.precioBoleto, 35.5);
+  assert.equal((await put(-1, 20)).status, 400);
+  assert.equal((await put(10, -1)).status, 400);
+  assert.equal((await put('abc', 20)).status, 400);
+  const changed = (await put(35.5, 70)).data;
+  assert.equal(changed.precioBoleto, 35.5);
+  assert.equal(changed.precioDoble, 70);
+
+  const odds = (await api.request('GET', '/combinaciones/probabilidades', { token: tokens.DOS })).data;
+  assert.equal(odds.precioBoleto, 35.5);
+  assert.equal(odds.precioDoble, 70);
 
   const next = (await post('/combinaciones/generar', tokens.DOS, {})).data.proximoSorteo;
   const combo = (await post('/combinaciones', tokens.DOS, { estrategia: 'AZAR', numeros: [4, 8, 12, 16, 20, 24], fecha: next.fecha })).data;
-  const played = await api.request('PATCH', `/combinaciones/${combo.id}/jugada`, { token: tokens.DOS, body: { jugada: true } });
-  assert.equal(played.data.costo, 35.5);
+  const play = (modalidad) => api.request('PATCH', `/combinaciones/${combo.id}/jugada`, { token: tokens.DOS, body: { jugada: true, modalidad } });
+  assert.equal((await play('SENCILLA')).data.costo, 35.5);
+  assert.equal((await play('DOBLE')).data.costo, 70);
 
-  // Guardar los demás ajustes sin enviar el precio no lo borra.
-  assert.equal((await api.request('PUT', '/configuracion', {
+  // Guardar los demás ajustes sin enviar los precios no los borra.
+  const kept = (await api.request('PUT', '/configuracion', {
     token: tokens.SUPER_ADMIN,
     body: { ventanaCalientes: 5, pesos: settings.pesos },
-  })).data.precioBoleto, 35.5);
+  })).data;
+  assert.equal(kept.precioBoleto, 35.5);
+  assert.equal(kept.precioDoble, 70);
 });
 
-test('la exportación CSV incluye costo y premio', async () => {
+test('la exportación CSV incluye modalidad, costo y premio', async () => {
   const response = await fetch(`${api.base}/combinaciones/exportar`, { headers: { Authorization: `Bearer ${tokens.UNO}` } });
   const lines = (await response.text()).replace(String.fromCharCode(0xfeff), '').trim().split('\r\n');
-  assert.equal(lines[0], 'Creada,Estrategia,Números,Sorteo,Resultado,Aciertos,Jugada,Costo,Premio');
-  assert.ok(lines.some((l) => l.endsWith(',Sí,20,')), 'una combinación jugada debe mostrar su costo');
+  assert.equal(lines[0], 'Creada,Estrategia,Números,Sorteo,Resultado,Aciertos,Jugada,Modalidad,Costo,Premio');
+  assert.ok(lines.some((l) => l.endsWith(',Sí,Doble,20,')), 'una jugada doble debe mostrar su modalidad y costo');
+  assert.ok(lines.some((l) => l.endsWith(',Sí,Sencilla,10,')), 'una jugada sencilla debe mostrar su modalidad y costo');
 });

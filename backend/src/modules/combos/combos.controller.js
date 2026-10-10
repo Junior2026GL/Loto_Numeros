@@ -21,7 +21,13 @@ export const budget = handler(async (req) => ({ data: await service.budget(req.u
 export const setLimit = handler(async (req) => ({ data: await service.setLimit(req.user.sub, req.body?.limiteMensual) }));
 export const save = handler(async (req) => ({ status: 201, data: await service.save(req.body, req.user.sub) }));
 export const setPlayed = handler(async (req) => ({
-  data: await service.setPlayed(req.params.id, req.body?.jugada, req.user.sub, req.body?.confirmar === true),
+  data: await service.setPlayed(
+    req.params.id,
+    Boolean(req.body?.jugada),
+    req.user.sub,
+    req.body?.confirmar === true,
+    req.body?.modalidad || 'SENCILLA'
+  ),
 }));
 export const setPrize = handler(async (req) => ({
   data: await service.setPrize(req.params.id, req.body?.premio, req.user.sub),

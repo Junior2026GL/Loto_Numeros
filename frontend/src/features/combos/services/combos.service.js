@@ -21,8 +21,9 @@ export async function getCombinationsSummary() {
   return data.data;
 }
 
-export async function setCombinationPlayed(id, jugada, confirmar = false) {
-  const { data } = await api.patch(`/combinaciones/${id}/jugada`, { jugada, confirmar });
+/** @param modalidad 'SENCILLA' o 'DOBLE' (solo importa cuando jugada es true) */
+export async function setCombinationPlayed(id, jugada, confirmar = false, modalidad = 'SENCILLA') {
+  const { data } = await api.patch(`/combinaciones/${id}/jugada`, { jugada, confirmar, modalidad });
   return data.data;
 }
 

@@ -117,9 +117,9 @@ export default function BudgetPanel({ reload }) {
         </div>
 
         <p className="panel-note" style={{ margin: '14px 0 0' }}>
-          Precio de un boleto: <b>{formatMoney(budget.precioBoleto)}</b> (lo define el administrador en Configuración).
-          Cada combinación que marcas como jugada suma ese precio a tu gasto; los premios los registras tú en
-          «Mis combinaciones».
+          Jugada sencilla: <b>{formatMoney(budget.precioBoleto)}</b> · Jugada doble: <b>{formatMoney(budget.precioDoble)}</b>
+          {' '}(los define el administrador en Configuración). Cada combinación que marcas como jugada suma su precio a tu
+          gasto; los premios los registras tú en «Mis combinaciones».
         </p>
       </div>
     </>
