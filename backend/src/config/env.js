@@ -55,6 +55,8 @@ export const env = {
   lotto: {
     baseUrl: process.env.LOTTO_API_URL || 'https://loto.hn/api/resultados_superpremio_por_fecha.php',
     timeoutMs: Number(process.env.LOTTO_TIMEOUT_MS || 10000),
+    // Espera base entre reintentos cuando la fuente rechaza una consulta (se multiplica por el intento).
+    retryDelayMs: Number(process.env.LOTTO_RETRY_DELAY_MS ?? 2000),
     // Sincronización automática después de cada sorteo. Apagada por defecto.
     autoSync: process.env.SYNC_AUTO === 'true',
   },

@@ -32,6 +32,26 @@ export async function lastRun(juegoId) {
   return rows[0] || null;
 }
 
+/** La ejecución inmediatamente anterior a `antesDeId` (para detectar fallos repetidos). */
+export async function previousRun(juegoId, antesDeId) {
+  const [rows] = await db.query(
+    `SELECT id, origen, estado, detalle FROM sincronizaciones
+     WHERE juego_id = ? AND id < ? ORDER BY id DESC LIMIT 1`,
+    [juegoId, antesDeId]
+  );
+  return rows[0] || null;
+}
+
+/** Vuelve a marcar una ejecución fallida como el intento más reciente. */
+export async function refreshRun(id, { hasta, errores, detalle }) {
+  await db.query(
+    `UPDATE sincronizaciones
+     SET fecha_hasta = ?, errores = ?, detalle = ?, iniciada_at = NOW(), finalizada_at = NOW()
+     WHERE id = ?`,
+    [hasta, errores, detalle || null, id]
+  );
+}
+
 export async function listRuns({ juegoId, page, pageSize }) {
   const limit = Math.max(1, Math.min(50, Number(pageSize) || 10));
   const offset = Math.max(0, (Number(page) || 1) - 1) * limit;

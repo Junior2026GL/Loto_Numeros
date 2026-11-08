@@ -3,6 +3,8 @@
 process.env.DB_NAME = 'loto_numeros_test';
 process.env.NODE_ENV = 'test';
 process.env.SYNC_AUTO = 'false';
+// Sin esperas entre reintentos de la fuente: las pruebas simulan fallas y deben ser rápidas.
+process.env.LOTTO_RETRY_DELAY_MS = '0';
 process.env.JWT_SECRET = 'secreto-solo-para-pruebas-automaticas-0123456789';
 // Sin SMTP: el código de recuperación se escribe en consola, donde la prueba lo captura.
 process.env.SMTP_HOST = '';

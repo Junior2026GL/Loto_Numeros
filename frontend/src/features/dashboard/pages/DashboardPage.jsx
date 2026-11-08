@@ -25,6 +25,8 @@ export default function DashboardPage() {
 
   const firstName = user?.nombre?.split(' ')[0];
   const lastRunFailed = sync?.ultimaEjecucion?.estado === 'FALLIDA';
+  // 403: la fuente bloqueó al servidor; reintentar no sirve, hay que cargar a mano o pedir acceso.
+  const sourceBlocked = lastRunFailed && /bloque/i.test(sync.ultimaEjecucion.detalle || '');
 
   return (
     <>
@@ -39,9 +41,19 @@ export default function DashboardPage() {
         <div className="alert error dash-notice">
           <IconAlert width={17} height={17} />
           <span>
-            <b>La última sincronización con loto.hn falló.</b>{' '}
-            {sync.ultimaEjecucion.detalle?.split('\n')[0]}{' '}
-            <Link to="/sincronizacion">Revisar</Link>
+            {sourceBlocked ? (
+              <>
+                <b>loto.hn está bloqueando a este servidor.</b> La sincronización automática no puede
+                descargar resultados y reintentar no lo arregla. Carga los sorteos a mano o pide a loto.hn
+                que habilite la IP del servidor. <Link to="/sorteos">Cargar sorteos</Link>
+              </>
+            ) : (
+              <>
+                <b>La última sincronización con loto.hn falló.</b>{' '}
+                {sync.ultimaEjecucion.detalle?.split('\n')[0]}{' '}
+                <Link to="/sincronizacion">Revisar</Link>
+              </>
+            )}
           </span>
         </div>
       )}
@@ -51,7 +63,13 @@ export default function DashboardPage() {
           <IconAlert width={17} height={17} />
           <span>
             Faltan <b>{data.pendientes}</b> sorteo{data.pendientes === 1 ? '' : 's'} por guardar: los resultados
-            que ves pueden no estar al día.{' '}
+            que ves pueden no estar al día
+            {data.esperados > 0 && (
+              <>
+                {' '}(tienes {data.registrados} de {data.esperados} esperados
+                {data.huecos > 0 && <>; {data.huecos} son huecos anteriores al último guardado</>})
+              </>
+            )}.{' '}
             {isAdmin && <Link to="/sincronizacion">Sincronizar ahora</Link>}
           </span>
         </div>

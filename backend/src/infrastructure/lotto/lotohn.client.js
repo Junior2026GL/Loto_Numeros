@@ -24,9 +24,10 @@ async function fetchWithRetry(url) {
       const server = response.headers.get('server');
       const detalle = [server && `servidor ${server}`, ray && `cf-ray ${ray}`].filter(Boolean).join(', ');
       lastError = new Error(`loto.hn respondió HTTP ${response.status}${detalle ? ` (${detalle})` : ''}`);
+      lastError.status = response.status; // 403 = la fuente bloqueó a este servidor
       if (!RETRY_STATUS.has(response.status)) throw lastError;
     }
-    if (attempt < MAX_ATTEMPTS) await sleep(attempt * 2000);
+    if (attempt < MAX_ATTEMPTS) await sleep(attempt * env.lotto.retryDelayMs);
   }
   throw lastError;
 }

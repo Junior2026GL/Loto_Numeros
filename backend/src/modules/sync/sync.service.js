@@ -9,7 +9,7 @@ import {
 } from '../../shared/utils/dates.js';
 import { fetchDrawResult } from '../../infrastructure/lotto/lotohn.client.js';
 import * as draws from '../draws/draws.repository.js';
-import { FIRST_DRAW_DATE, isPublished, missingDraws } from '../draws/draws.service.js';
+import { isPublished, missingDraws } from '../draws/draws.service.js';
 import * as repository from './sync.repository.js';
 import { env } from '../../config/env.js';
 
@@ -17,7 +17,13 @@ const MAX_RANGE_DAYS = 400;
 const REQUEST_DELAY_MS = 200;
 const MAX_CONSECUTIVE_ERRORS = 5;
 
+const BLOCKED_MESSAGE =
+  'loto.hn bloqueó a este servidor (HTTP 403). Reintentar no sirve: carga los sorteos a mano en la sección Sorteos o pide a loto.hn que habilite la IP del servidor.';
+
 let running = false;
+
+// Dos fallos son "el mismo" si dicen lo mismo, sin contar el identificador de cada petición (cf-ray).
+const normalizeFailure = (text) => String(text || '').replace(/\s*\(servidor [^)]*\)/g, '').trim();
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -113,6 +119,12 @@ export async function run({ desde, hasta, usuarioId = null, origen = 'MANUAL' })
           errores += 1;
           erroresSeguidos += 1;
           detalle.push(`${fecha}: ${error.message}`);
+          if (error.status === 403) {
+            // La fuente bloqueó al servidor: el resto de las fechas fallaría igual.
+            abortada = true;
+            detalle.push(BLOCKED_MESSAGE);
+            break;
+          }
           if (erroresSeguidos >= MAX_CONSECUTIVE_ERRORS) {
             abortada = true;
             detalle.push('Se detuvo: la fuente no responde.');
@@ -130,6 +142,22 @@ export async function run({ desde, hasta, usuarioId = null, origen = 'MANUAL' })
     }
 
     const estado = abortada || (errores > 0 && insertados === 0 && pendientes.length > 0) ? 'FALLIDA' : 'COMPLETADA';
+
+    // Si la tarea programada vuelve a fallar igual que la vez anterior, se actualiza esa fila
+    // en lugar de llenar la bitácora con un registro idéntico cada 30 minutos.
+    if (origen === 'PROGRAMADA' && estado === 'FALLIDA' && insertados === 0) {
+      const previa = await repository.previousRun(game.id, runId);
+      if (
+        previa?.origen === 'PROGRAMADA' &&
+        previa.estado === 'FALLIDA' &&
+        normalizeFailure(previa.detalle) === normalizeFailure(detalle.join('\n'))
+      ) {
+        await repository.refreshRun(previa.id, { hasta: hastaEfectivo, errores, detalle: detalle.join('\n') });
+        await repository.deleteRun(runId);
+        return { id: previa.id, estado, totalFechas: fechas.length, insertados, omitidos, errores, detalle };
+      }
+    }
+
     await repository.finishRun(runId, { insertados, omitidos, errores, estado, detalle: detalle.join('\n') });
 
     return { id: runId, estado, totalFechas: fechas.length, insertados, omitidos, errores, detalle };
@@ -145,13 +173,15 @@ export async function run({ desde, hasta, usuarioId = null, origen = 'MANUAL' })
   }
 }
 
-/** Busca todo lo que falta desde el último sorteo guardado hasta hoy. */
+/** Busca todo lo que falta en el historial (incluidos los huecos anteriores al último guardado). */
 export async function runPending({ usuarioId = null, origen = 'MANUAL' } = {}) {
-  const game = await getGame();
-  const last = await draws.findLastDrawDate(game.id);
+  const missing = await missingDraws();
+  const hasta = todayInHonduras();
+  // El rango máximo por consulta es MAX_RANGE_DAYS; si el hueco es más viejo, se llena por partes.
+  const limite = addDays(hasta, -MAX_RANGE_DAYS);
   return run({
-    desde: last ? addDays(last, 1) : FIRST_DRAW_DATE,
-    hasta: todayInHonduras(),
+    desde: missing.desde < limite ? limite : missing.desde,
+    hasta,
     usuarioId,
     origen,
   });
@@ -165,6 +195,9 @@ export async function status() {
     ultimoSorteo: missing.ultimoSorteo,
     sugerido: { desde: missing.desde > hoy ? hoy : missing.desde, hasta: hoy },
     pendientes: missing.pendientes,
+    huecos: missing.huecos,
+    esperados: missing.esperados,
+    registrados: missing.registrados,
     ultimaEjecucion: lastRun,
     autoSync: env.lotto.autoSync,
     ejecutando: running,

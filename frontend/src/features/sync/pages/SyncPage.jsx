@@ -81,6 +81,12 @@ export default function SyncPage() {
             ? <>Último sorteo guardado: <strong>{formatDate(status.ultimoSorteo)}</strong>. </>
             : 'Aún no hay sorteos guardados. '}
           Solo se descargan los sorteos que faltan; los que ya existen no se tocan.
+          {status?.esperados > 0 && (
+            <>
+              {' '}Tienes <strong>{status.registrados}</strong> de <strong>{status.esperados}</strong> sorteos esperados
+              {status.huecos > 0 && <> ({status.huecos} huecos anteriores al último guardado)</>}.
+            </>
+          )}
           {status && (
             <> La sincronización automática está <strong>{status.autoSync ? 'activada' : 'desactivada'}</strong>.</>
           )}

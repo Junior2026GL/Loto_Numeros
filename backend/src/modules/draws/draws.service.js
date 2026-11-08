@@ -61,14 +61,31 @@ export function isPublished(fecha, game) {
   return now.getUTCHours() * 60 + now.getUTCMinutes() >= hh * 60 + mm + PUBLISH_GRACE_MINUTES;
 }
 
-/** Sorteos que ya deberían existir pero no están guardados (desde el último guardado hasta hoy). */
+/**
+ * Sorteos que ya deberían existir pero no están guardados, en TODO el historial (desde la primera
+ * fecha con resultados hasta hoy), no solo después del último guardado.
+ * - `pendientes`: cuántos faltan en total.
+ * - `huecos`: los que faltan aunque ya haya sorteos posteriores guardados.
+ * - `esperados` / `registrados`: cuántos debería haber y cuántos hay.
+ */
 export async function missingDraws() {
   const g = await getGame();
   const last = await repository.findLastDrawDate(g.id);
   const hoy = todayInHonduras();
-  const desde = last ? addDays(last, 1) : FIRST_DRAW_DATE;
-  const fechas = desde > hoy ? [] : drawDatesBetween(desde, hoy, g.dias).filter((f) => isPublished(f, g));
-  return { ultimoSorteo: last, pendientes: fechas.length, desde, hasta: hoy };
+  const esperadas = drawDatesBetween(FIRST_DRAW_DATE, hoy, g.dias).filter((f) => isPublished(f, g));
+  const existentes = new Set(esperadas.length ? await repository.listDrawDates(g.id, FIRST_DRAW_DATE, hoy) : []);
+  const faltantes = esperadas.filter((f) => !existentes.has(f));
+  const desde = faltantes[0] || (last ? addDays(last, 1) : FIRST_DRAW_DATE);
+
+  return {
+    ultimoSorteo: last,
+    pendientes: faltantes.length,
+    huecos: last ? faltantes.filter((f) => f < last).length : 0,
+    esperados: esperadas.length,
+    registrados: esperadas.length - faltantes.length,
+    desde,
+    hasta: hoy,
+  };
 }
 
 export async function game() {
@@ -110,6 +127,9 @@ export async function summary() {
     total,
     masFrecuente,
     pendientes: faltantes.pendientes,
+    huecos: faltantes.huecos,
+    esperados: faltantes.esperados,
+    registrados: faltantes.registrados,
     proximo: nextDraw(g),
   };
 }
