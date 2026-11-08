@@ -5,7 +5,6 @@ import { BallsRow } from '../../../components/LotteryBall.jsx';
 import LotteryBall from '../../../components/LotteryBall.jsx';
 import { IconAlert, IconCalendar, IconClock, IconLogbook, IconArrowRight } from '../../../components/icons.jsx';
 import { getSummary } from '../../draws/services/draws.service.js';
-import { getSyncStatus } from '../../sync/services/sync.service.js';
 import { getUser } from '../../auth/session.js';
 import { capitalize, dayName, formatDate } from '../../../utils/dates.js';
 
@@ -13,20 +12,15 @@ export default function DashboardPage() {
   const user = getUser();
   const isAdmin = user?.rol === 'SUPER_ADMIN' || user?.rol === 'ADMIN';
   const [data, setData] = useState(null);
-  const [sync, setSync] = useState(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
     getSummary()
       .then(setData)
       .catch((err) => setError(err.response?.data?.message || 'No se pudo cargar el resumen'));
-    if (isAdmin) getSyncStatus().then(setSync).catch(() => {});
-  }, [isAdmin]);
+  }, []);
 
   const firstName = user?.nombre?.split(' ')[0];
-  const lastRunFailed = sync?.ultimaEjecucion?.estado === 'FALLIDA';
-  // 403: la fuente bloqueó al servidor; reintentar no sirve, hay que cargar a mano o pedir acceso.
-  const sourceBlocked = lastRunFailed && /bloque/i.test(sync.ultimaEjecucion.detalle || '');
 
   return (
     <>
@@ -36,27 +30,6 @@ export default function DashboardPage() {
       />
 
       {error && <div className="alert error" style={{ marginBottom: 16 }}>{error}</div>}
-
-      {isAdmin && lastRunFailed && (
-        <div className="alert error dash-notice">
-          <IconAlert width={17} height={17} />
-          <span>
-            {sourceBlocked ? (
-              <>
-                <b>loto.hn está bloqueando a este servidor.</b> La sincronización automática no puede
-                descargar resultados y reintentar no lo arregla. Carga los sorteos a mano o pide a loto.hn
-                que habilite la IP del servidor. <Link to="/sorteos">Cargar sorteos</Link>
-              </>
-            ) : (
-              <>
-                <b>La última sincronización con loto.hn falló.</b>{' '}
-                {sync.ultimaEjecucion.detalle?.split('\n')[0]}{' '}
-                <Link to="/sincronizacion">Revisar</Link>
-              </>
-            )}
-          </span>
-        </div>
-      )}
 
       {data?.pendientes > 0 && (
         <div className="alert dash-notice">
@@ -70,7 +43,7 @@ export default function DashboardPage() {
                 {data.huecos > 0 && <>; {data.huecos} son huecos anteriores al último guardado</>})
               </>
             )}.{' '}
-            {isAdmin && <Link to="/sincronizacion">Sincronizar ahora</Link>}
+            {isAdmin && <Link to="/sorteos">Cargar sorteos</Link>}
           </span>
         </div>
       )}
