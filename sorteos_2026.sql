@@ -7,13 +7,13 @@ START TRANSACTION;
 SET @juego := (SELECT id FROM juegos WHERE codigo = 'SUPERPREMIO');
 
 -- 1) Resultados a cargar
-DROP TEMPORARY TABLE IF EXISTS tmp_resultados;
-CREATE TEMPORARY TABLE tmp_resultados (
+DROP TABLE IF EXISTS tmp_resultados_carga;
+CREATE TABLE tmp_resultados_carga (
   fecha DATE PRIMARY KEY,
   n1 TINYINT UNSIGNED, n2 TINYINT UNSIGNED, n3 TINYINT UNSIGNED,
   n4 TINYINT UNSIGNED, n5 TINYINT UNSIGNED, n6 TINYINT UNSIGNED
 );
-INSERT INTO tmp_resultados (fecha, n1, n2, n3, n4, n5, n6) VALUES
+INSERT INTO tmp_resultados_carga (fecha, n1, n2, n3, n4, n5, n6) VALUES
   ('2026-01-03', 6, 7, 19, 21, 22, 26),
   ('2026-01-07', 5, 6, 8, 26, 31, 33),
   ('2026-01-10', 1, 2, 6, 12, 19, 22),
@@ -105,7 +105,7 @@ INSERT INTO tmp_resultados (fecha, n1, n2, n3, n4, n5, n6) VALUES
 
 -- 2) Qué fechas faltan (revisa esta lista antes del COMMIT)
 SELECT t.fecha AS fecha_que_falta
-FROM tmp_resultados t
+FROM tmp_resultados_carga t
 LEFT JOIN sorteos s ON s.juego_id = @juego AND s.fecha = t.fecha
 WHERE s.id IS NULL
 ORDER BY t.fecha;
@@ -113,7 +113,7 @@ ORDER BY t.fecha;
 -- 3) Crear los sorteos que faltan
 INSERT INTO sorteos (juego_id, fecha, fuente)
 SELECT @juego, t.fecha, 'SCRAPER'
-FROM tmp_resultados t
+FROM tmp_resultados_carga t
 LEFT JOIN sorteos s ON s.juego_id = @juego AND s.fecha = t.fecha
 WHERE s.id IS NULL;
 
@@ -121,7 +121,7 @@ WHERE s.id IS NULL;
 INSERT INTO sorteo_numeros (sorteo_id, posicion, numero)
 SELECT s.id, p.posicion,
        ELT(p.posicion, t.n1, t.n2, t.n3, t.n4, t.n5, t.n6)
-FROM tmp_resultados t
+FROM tmp_resultados_carga t
 JOIN sorteos s ON s.juego_id = @juego AND s.fecha = t.fecha
 JOIN (SELECT 1 posicion UNION ALL SELECT 2 UNION ALL SELECT 3
       UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6) p
@@ -130,7 +130,7 @@ WHERE NOT EXISTS (SELECT 1 FROM sorteo_numeros sn WHERE sn.sorteo_id = s.id);
 -- 5) Verificación: sorteos de la BD que no coinciden con la fuente (debe salir vacío)
 SELECT s.fecha,
        GROUP_CONCAT(LPAD(sn.numero,2,'0') ORDER BY sn.posicion SEPARATOR ' ') AS en_bd
-FROM tmp_resultados t
+FROM tmp_resultados_carga t
 JOIN sorteos s ON s.juego_id = @juego AND s.fecha = t.fecha
 JOIN sorteo_numeros sn ON sn.sorteo_id = s.id
 GROUP BY s.id, s.fecha, t.n1, t.n2, t.n3, t.n4, t.n5, t.n6
@@ -142,5 +142,5 @@ ORDER BY s.fecha;
 SELECT COUNT(*) AS sorteos_2026 FROM sorteos
 WHERE juego_id = @juego AND fecha BETWEEN '2026-01-03' AND '2026-11-04';
 
-DROP TEMPORARY TABLE tmp_resultados;
+DROP TABLE tmp_resultados_carga;
 COMMIT;
